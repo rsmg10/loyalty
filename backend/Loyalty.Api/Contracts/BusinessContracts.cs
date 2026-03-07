@@ -8,9 +8,12 @@ public sealed record BusinessOnboardingRequest(
     string Name,
     string OwnerPhone,
     string BusinessType,
+    string ProgramName,
+    string? ProgramDescription,
     string RewardName,
     int VisitThreshold,
-    string? OptionalNote
+    string? OptionalNote,
+    int? StampExpirationDays
 );
 
 public sealed record BusinessDetailResponse(
@@ -19,7 +22,12 @@ public sealed record BusinessDetailResponse(
     string OwnerPhone,
     string BusinessType,
     DateTime CreatedAt,
+    string ProgramName,
+    string? ProgramDescription,
+    string? ProgramIconUrl,
     string RewardName,
+    string? RewardImageUrl,
     int VisitThreshold,
-    string? OptionalNote
+    string? OptionalNote,
+    int? StampExpirationDays
 );

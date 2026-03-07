@@ -59,7 +59,7 @@
             <span class="chip">Live</span>
           </div>
           <p class="mt-2 text-sm text-dusk/70">
-            Record a visit for a customer phone number. Cooldown and reward state are enforced server-side.
+            Record a purchase stamp from a customer visit. Cooldown and reward state are enforced server-side.
           </p>
           <div class="mt-4 space-y-3">
             <input v-model="visit.phone" class="input" placeholder="Customer phone" />
@@ -71,12 +71,48 @@
                 {{ visitResult.rewardAvailable ? 'Reward available' : 'Progress updated' }}
               </p>
               <p class="text-dusk/70">
-                {{ visitResult.visitCount }} / {{ visitResult.visitThreshold }} visits
+                {{ visitResult.visitCount }} / {{ visitResult.visitThreshold }} stamps
               </p>
               <p class="text-dusk/70">Reward: {{ visitResult.rewardName }}</p>
             </div>
             <p v-if="visitMessage" :class="messageClass(visitMessage.tone)">
               {{ visitMessage.text }}
+            </p>
+          </div>
+        </div>
+
+        <div class="glass-card animate-rise">
+          <div class="flex items-center justify-between">
+            <h2 class="section-title">Stamp issuance</h2>
+            <span class="chip">Audit</span>
+          </div>
+          <p class="mt-2 text-sm text-dusk/70">
+            Issue one or more stamps with a required reason.
+          </p>
+          <div class="mt-4 space-y-3">
+            <input v-model="stampIssue.phone" class="input" placeholder="Customer phone" />
+            <input
+              v-model.number="stampIssue.quantity"
+              class="input"
+              type="number"
+              min="1"
+              placeholder="Quantity"
+            />
+            <input v-model="stampIssue.reason" class="input" placeholder="Reason (purchase, adjustment)" />
+            <button class="btn-primary w-full" :disabled="stampIssueLoading" @click="issueStamps">
+              {{ stampIssueLoading ? 'Issuing...' : 'Issue stamps' }}
+            </button>
+            <div v-if="stampIssueResult" class="rounded-xl bg-sand/70 p-3 text-sm">
+              <p class="font-semibold">
+                {{ stampIssueResult.rewardAvailable ? 'Reward available' : 'Stamps issued' }}
+              </p>
+              <p class="text-dusk/70">
+                {{ stampIssueResult.stampCount }} / {{ stampIssueResult.stampThreshold }} stamps
+              </p>
+              <p class="text-dusk/70">Reward: {{ stampIssueResult.rewardDescription }}</p>
+            </div>
+            <p v-if="stampIssueMessage" :class="messageClass(stampIssueMessage.tone)">
+              {{ stampIssueMessage.text }}
             </p>
           </div>
         </div>
@@ -97,6 +133,9 @@
             <div v-if="redeemResult" class="rounded-xl bg-sand/70 p-3 text-sm">
               <p class="font-semibold">Reward redeemed</p>
               <p class="text-dusk/70">{{ redeemResult.rewardName }}</p>
+              <p v-if="redeemResult.redeemedByPhone" class="text-dusk/70">
+                Redeemed by: {{ redeemResult.redeemedByPhone }}
+              </p>
             </div>
             <p v-if="redeemMessage" :class="messageClass(redeemMessage.tone)">
               {{ redeemMessage.text }}
@@ -117,12 +156,37 @@
             </button>
             <div v-if="lookupResult" class="rounded-xl bg-white/70 p-3 text-sm">
               <p class="font-semibold">{{ lookupResult.businessName }}</p>
+              <p class="text-dusk/70">Program: {{ lookupResult.programName }}</p>
+              <p v-if="lookupResult.programDescription" class="text-dusk/70">
+                {{ lookupResult.programDescription }}
+              </p>
+              <img
+                v-if="lookupResult.programIconUrl"
+                :src="lookupResult.programIconUrl"
+                alt="Program icon"
+                class="mt-2 h-14 w-14 rounded-xl object-cover"
+              />
               <p class="text-dusk/70">Reward: {{ lookupResult.rewardName }}</p>
+              <img
+                v-if="lookupResult.rewardImageUrl"
+                :src="lookupResult.rewardImageUrl"
+                alt="Reward"
+                class="mt-2 h-24 w-full rounded-2xl object-cover"
+              />
               <p class="text-dusk/70">
-                Progress: {{ lookupResult.visitCount }} / {{ lookupResult.visitThreshold }}
+                Progress: {{ lookupResult.visitCount }} / {{ lookupResult.visitThreshold }} stamps
               </p>
               <p v-if="lookupResult.optionalNote" class="text-dusk/70">
                 Note: {{ lookupResult.optionalNote }}
+              </p>
+              <p v-if="lookupResult.stampExpirationDays" class="text-dusk/70">
+                Stamp expiration: {{ lookupResult.stampExpirationDays }} days
+              </p>
+              <p v-if="lookupResult.lastStampAt" class="text-dusk/70">
+                Last stamp: {{ new Date(lookupResult.lastStampAt).toLocaleString() }}
+              </p>
+              <p v-if="lookupResult.rewardAvailableAt" class="text-dusk/70">
+                Reward available since: {{ new Date(lookupResult.rewardAvailableAt).toLocaleString() }}
               </p>
             </div>
             <button class="btn-ghost w-full" :disabled="historyLoading" @click="fetchHistory">
@@ -130,7 +194,17 @@
             </button>
             <ul v-if="visitHistory.length" class="space-y-2 text-xs text-dusk/70">
               <li v-for="item in visitHistory" :key="item.createdAt">
-                {{ new Date(item.createdAt).toLocaleString() }}
+                {{ new Date(item.createdAt).toLocaleString() }} · {{ item.quantity }} stamp(s)
+                <span v-if="item.reason">· {{ item.reason }}</span>
+              </li>
+            </ul>
+            <button class="btn-ghost w-full" :disabled="stampHistoryLoading" @click="fetchStampHistory">
+              {{ stampHistoryLoading ? 'Loading stamps...' : 'Load stamp history' }}
+            </button>
+            <ul v-if="stampHistory.length" class="space-y-2 text-xs text-dusk/70">
+              <li v-for="item in stampHistory" :key="item.id">
+                {{ new Date(item.issuedAt).toLocaleString() }} · {{ item.quantity }} stamp(s) ·
+                {{ item.reason }} · {{ item.issuedByPhone }}
               </li>
             </ul>
             <p v-if="lookupMessage" :class="messageClass(lookupMessage.tone)">
@@ -160,6 +234,25 @@
           </div>
         </div>
 
+        <div class="glass-card animate-rise">
+          <div class="flex items-center justify-between">
+            <h2 class="section-title">Membership join</h2>
+            <span class="chip">Enroll</span>
+          </div>
+          <p class="mt-2 text-sm text-dusk/70">
+            Create a loyalty membership for a customer without issuing stamps.
+          </p>
+          <div class="mt-4 space-y-3">
+            <input v-model="membership.phone" class="input" placeholder="Customer phone" />
+            <button class="btn-primary w-full" :disabled="membershipLoading" @click="createMembership">
+              {{ membershipLoading ? 'Creating...' : 'Create membership' }}
+            </button>
+            <p v-if="membershipMessage" :class="messageClass(membershipMessage.tone)">
+              {{ membershipMessage.text }}
+            </p>
+          </div>
+        </div>
+
         <div v-if="isOwner" class="glass-card animate-rise">
           <div class="flex items-center justify-between">
             <h2 class="section-title">Loyalty config</h2>
@@ -167,6 +260,30 @@
           </div>
           <p class="mt-2 text-sm text-dusk/70">Update the active reward for new cycles.</p>
           <div class="mt-4 space-y-3">
+            <input v-model="loyaltyConfig.programName" class="input" placeholder="Program name" />
+            <textarea
+              v-model="loyaltyConfig.programDescription"
+              class="textarea"
+              placeholder="Program description"
+            ></textarea>
+            <div class="space-y-2">
+              <label class="text-xs font-semibold uppercase tracking-wide text-dusk/70">Program icon</label>
+              <input
+                class="input"
+                type="file"
+                accept="image/*"
+                @change="onProgramIconChange"
+              />
+              <button class="btn-ghost w-full" :disabled="loyaltyLoading" @click="uploadProgramIcon">
+                Upload program icon
+              </button>
+              <img
+                v-if="loyaltyConfig.programIconUrl"
+                :src="loyaltyConfig.programIconUrl"
+                alt="Program icon"
+                class="h-20 w-20 rounded-2xl object-cover"
+              />
+            </div>
             <input v-model="loyaltyConfig.rewardName" class="input" placeholder="Reward name" />
             <input
               v-model.number="loyaltyConfig.visitThreshold"
@@ -174,11 +291,36 @@
               type="number"
               min="1"
             />
+            <div class="space-y-2">
+              <label class="text-xs font-semibold uppercase tracking-wide text-dusk/70">Reward image</label>
+              <input
+                class="input"
+                type="file"
+                accept="image/*"
+                @change="onRewardImageChange"
+              />
+              <button class="btn-ghost w-full" :disabled="loyaltyLoading" @click="uploadRewardImage">
+                Upload reward image
+              </button>
+              <img
+                v-if="loyaltyConfig.rewardImageUrl"
+                :src="loyaltyConfig.rewardImageUrl"
+                alt="Reward image"
+                class="h-24 w-full rounded-2xl object-cover"
+              />
+            </div>
             <textarea
               v-model="loyaltyConfig.optionalNote"
               class="textarea"
               placeholder="Optional note"
             ></textarea>
+            <input
+              v-model="loyaltyConfig.stampExpirationDays"
+              class="input"
+              type="number"
+              min="1"
+              placeholder="Stamp expiration days (optional)"
+            />
             <div class="flex flex-col gap-2 sm:flex-row">
               <button class="btn-primary w-full" :disabled="loyaltyLoading" @click="saveLoyaltyConfig">
                 {{ loyaltyLoading ? 'Saving...' : 'Save config' }}
@@ -232,10 +374,32 @@
             <ul v-if="redemptions.length" class="space-y-2 text-xs text-dusk/70">
               <li v-for="entry in redemptions" :key="entry.id">
                 {{ entry.rewardName }} · {{ new Date(entry.redeemedAt).toLocaleString() }}
+                <span v-if="entry.redeemedByPhone"> · {{ entry.redeemedByPhone }}</span>
               </li>
             </ul>
             <p v-if="redemptionsMessage" :class="messageClass(redemptionsMessage.tone)">
               {{ redemptionsMessage.text }}
+            </p>
+          </div>
+        </div>
+
+        <div v-if="isOwner" class="glass-card animate-rise">
+          <div class="flex items-center justify-between">
+            <h2 class="section-title">Business stats</h2>
+            <span class="chip">Owner</span>
+          </div>
+          <p class="mt-2 text-sm text-dusk/70">Quick loyalty totals for this business.</p>
+          <div class="mt-4 space-y-3">
+            <button class="btn-ghost w-full" :disabled="statsLoading" @click="loadStats">
+              {{ statsLoading ? 'Loading...' : 'Load stats' }}
+            </button>
+            <div v-if="stats" class="rounded-xl bg-white/70 p-3 text-sm text-dusk/80">
+              <p>Enrolled customers: {{ stats.enrolledCustomers }}</p>
+              <p>Stamps issued: {{ stats.stampsIssued }}</p>
+              <p>Rewards redeemed: {{ stats.rewardsRedeemed }}</p>
+            </div>
+            <p v-if="statsMessage" :class="messageClass(statsMessage.tone)">
+              {{ statsMessage.text }}
             </p>
           </div>
         </div>
@@ -246,7 +410,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue';
-import { apiGet, apiPost, apiPut } from '../lib/api';
+import { apiGet, apiPost, apiPostForm, apiPut } from '../lib/api';
 import { messageClass, setMessage } from '../lib/messages';
 import type { Message } from '../lib/messages';
 import { useSessionStore } from '../stores/session';
@@ -272,18 +436,28 @@ type RedemptionResponse = {
   rewardName: string;
   redeemedAt: string;
   visitCount: number;
+  redeemedByPhone?: string | null;
 };
 
 type CustomerStatusResponse = {
   businessName: string;
+  programName: string;
+  programDescription?: string | null;
+  programIconUrl?: string | null;
   rewardName: string;
+  rewardImageUrl?: string | null;
   visitCount: number;
   visitThreshold: number;
   optionalNote?: string | null;
+  stampExpirationDays?: number | null;
+  rewardAvailableAt?: string | null;
+  lastStampAt?: string | null;
 };
 
 type VisitHistoryItem = {
   createdAt: string;
+  quantity: number;
+  reason?: string | null;
 };
 
 type StaffResponse = {
@@ -300,12 +474,48 @@ type RedemptionSummary = {
   rewardName: string;
   redeemedAt: string;
   staffId?: number | null;
+  redeemedByPhone?: string | null;
 };
 
 type BusinessDetailResponse = {
+  programName: string;
+  programDescription?: string | null;
+  programIconUrl?: string | null;
   rewardName: string;
+  rewardImageUrl?: string | null;
   visitThreshold: number;
   optionalNote?: string | null;
+  stampExpirationDays?: number | null;
+};
+
+type StampIssueResponse = {
+  customer: CustomerResponse;
+  stampCount: number;
+  stampThreshold: number;
+  rewardAvailable: boolean;
+  rewardDescription: string;
+  rewardAvailableAt?: string | null;
+  lastStampAt?: string | null;
+};
+
+type StampTransactionItem = {
+  id: number;
+  quantity: number;
+  reason: string;
+  issuedAt: string;
+  issuedByPhone: string;
+  staffId?: number | null;
+};
+
+type BusinessStatsResponse = {
+  enrolledCustomers: number;
+  stampsIssued: number;
+  rewardsRedeemed: number;
+};
+
+type LoyaltyMediaResponse = {
+  kind: string;
+  url: string;
 };
 
 type BusinessOption = {
@@ -324,6 +534,15 @@ const visitResult = ref<VisitResponse | null>(null);
 const visitLoading = ref(false);
 const visitMessage = ref<Message | null>(null);
 
+const stampIssue = reactive({
+  phone: '',
+  quantity: 1,
+  reason: ''
+});
+const stampIssueResult = ref<StampIssueResponse | null>(null);
+const stampIssueLoading = ref(false);
+const stampIssueMessage = ref<Message | null>(null);
+
 const redeem = reactive({
   phone: ''
 });
@@ -336,8 +555,10 @@ const lookup = reactive({
 });
 const lookupResult = ref<CustomerStatusResponse | null>(null);
 const visitHistory = ref<VisitHistoryItem[]>([]);
+const stampHistory = ref<StampTransactionItem[]>([]);
 const lookupLoading = ref(false);
 const historyLoading = ref(false);
+const stampHistoryLoading = ref(false);
 const lookupMessage = ref<Message | null>(null);
 
 const profile = reactive({
@@ -359,16 +580,36 @@ const staffLoading = ref(false);
 const staffMessage = ref<Message | null>(null);
 
 const loyaltyConfig = reactive({
+  programName: '',
+  programDescription: '',
   rewardName: '',
+  programIconUrl: '',
+  rewardImageUrl: '',
   visitThreshold: 9,
-  optionalNote: ''
+  optionalNote: '',
+  stampExpirationDays: '' as string | number
 });
 const loyaltyLoading = ref(false);
 const loyaltyMessage = ref<Message | null>(null);
 
+const media = reactive({
+  programIconFile: null as File | null,
+  rewardImageFile: null as File | null
+});
+
 const redemptions = ref<RedemptionSummary[]>([]);
 const redemptionsLoading = ref(false);
 const redemptionsMessage = ref<Message | null>(null);
+
+const membership = reactive({
+  phone: ''
+});
+const membershipLoading = ref(false);
+const membershipMessage = ref<Message | null>(null);
+
+const stats = ref<BusinessStatsResponse | null>(null);
+const statsLoading = ref(false);
+const statsMessage = ref<Message | null>(null);
 
 const businessOptions = computed<BusinessOption[]>(() => {
   const map = new Map();
@@ -521,6 +762,26 @@ async function fetchHistory() {
   }
 }
 
+async function fetchStampHistory() {
+  if (!activeBusiness.value) {
+    setMessage(lookupMessage, 'error', 'Select a business first.');
+    return;
+  }
+  stampHistoryLoading.value = true;
+  try {
+    const data = await apiGet<StampTransactionItem[]>(
+      `/businesses/${activeBusiness.value.id}/customers/${encodeURIComponent(lookup.phone)}/stamps`,
+      session.token
+    );
+    stampHistory.value = data || [];
+    setMessage(lookupMessage, 'success', 'Stamp history loaded.');
+  } catch (error) {
+    setMessage(lookupMessage, 'error', error.message);
+  } finally {
+    stampHistoryLoading.value = false;
+  }
+}
+
 async function updateProfile() {
   if (!activeBusiness.value) {
     setMessage(profileMessage, 'error', 'Select a business first.');
@@ -618,9 +879,14 @@ async function loadLoyaltyConfig() {
       `/businesses/${activeBusiness.value.id}`,
       session.token
     );
+    loyaltyConfig.programName = data.programName || '';
+    loyaltyConfig.programDescription = data.programDescription || '';
+    loyaltyConfig.programIconUrl = data.programIconUrl || '';
     loyaltyConfig.rewardName = data.rewardName || '';
+    loyaltyConfig.rewardImageUrl = data.rewardImageUrl || '';
     loyaltyConfig.visitThreshold = data.visitThreshold || 1;
     loyaltyConfig.optionalNote = data.optionalNote || '';
+    loyaltyConfig.stampExpirationDays = data.stampExpirationDays ?? '';
     setMessage(loyaltyMessage, 'success', 'Loyalty config loaded.');
   } catch (error) {
     setMessage(loyaltyMessage, 'error', error.message);
@@ -634,18 +900,171 @@ async function saveLoyaltyConfig() {
     setMessage(loyaltyMessage, 'error', 'Select a business first.');
     return;
   }
+  if (!loyaltyConfig.programName.trim()) {
+    setMessage(loyaltyMessage, 'error', 'Program name is required.');
+    return;
+  }
   loyaltyLoading.value = true;
   try {
     await apiPost(
       `/businesses/${activeBusiness.value.id}/loyalty-config`,
       {
+        programName: loyaltyConfig.programName,
+        programDescription: loyaltyConfig.programDescription,
         rewardName: loyaltyConfig.rewardName,
         visitThreshold: loyaltyConfig.visitThreshold,
-        optionalNote: loyaltyConfig.optionalNote
+        optionalNote: loyaltyConfig.optionalNote,
+        stampExpirationDays: loyaltyConfig.stampExpirationDays || null
       },
       session.token
     );
     setMessage(loyaltyMessage, 'success', 'Loyalty config updated.');
+  } catch (error) {
+    setMessage(loyaltyMessage, 'error', error.message);
+  } finally {
+    loyaltyLoading.value = false;
+  }
+}
+
+async function issueStamps() {
+  if (!activeBusiness.value) {
+    setMessage(stampIssueMessage, 'error', 'Select a business first.');
+    return;
+  }
+  if (!stampIssue.phone.trim()) {
+    setMessage(stampIssueMessage, 'error', 'Customer phone is required.');
+    return;
+  }
+  if (!stampIssue.reason.trim()) {
+    setMessage(stampIssueMessage, 'error', 'Reason is required.');
+    return;
+  }
+  if (!stampIssue.quantity || stampIssue.quantity <= 0) {
+    setMessage(stampIssueMessage, 'error', 'Stamp quantity must be positive.');
+    return;
+  }
+  stampIssueLoading.value = true;
+  try {
+    const data = await apiPost<StampIssueResponse>(
+      `/businesses/${activeBusiness.value.id}/stamps`,
+      {
+        customerPhone: stampIssue.phone,
+        quantity: stampIssue.quantity,
+        reason: stampIssue.reason
+      },
+      session.token
+    );
+    stampIssueResult.value = data;
+    setMessage(stampIssueMessage, 'success', 'Stamps issued.');
+  } catch (error) {
+    setMessage(stampIssueMessage, 'error', error.message);
+  } finally {
+    stampIssueLoading.value = false;
+  }
+}
+
+async function createMembership() {
+  if (!activeBusiness.value) {
+    setMessage(membershipMessage, 'error', 'Select a business first.');
+    return;
+  }
+  if (!membership.phone.trim()) {
+    setMessage(membershipMessage, 'error', 'Customer phone is required.');
+    return;
+  }
+  membershipLoading.value = true;
+  try {
+    await apiPost(
+      `/businesses/${activeBusiness.value.id}/memberships`,
+      { phoneNumber: membership.phone },
+      session.token
+    );
+    setMessage(membershipMessage, 'success', 'Membership created.');
+  } catch (error) {
+    setMessage(membershipMessage, 'error', error.message);
+  } finally {
+    membershipLoading.value = false;
+  }
+}
+
+async function loadStats() {
+  if (!activeBusiness.value) {
+    setMessage(statsMessage, 'error', 'Select a business first.');
+    return;
+  }
+  statsLoading.value = true;
+  try {
+    stats.value = await apiGet<BusinessStatsResponse>(
+      `/businesses/${activeBusiness.value.id}/stats`,
+      session.token
+    );
+    setMessage(statsMessage, 'success', 'Stats loaded.');
+  } catch (error) {
+    setMessage(statsMessage, 'error', error.message);
+  } finally {
+    statsLoading.value = false;
+  }
+}
+
+function onProgramIconChange(event: Event) {
+  const target = event.target as HTMLInputElement;
+  media.programIconFile = target.files?.[0] ?? null;
+}
+
+function onRewardImageChange(event: Event) {
+  const target = event.target as HTMLInputElement;
+  media.rewardImageFile = target.files?.[0] ?? null;
+}
+
+async function uploadProgramIcon() {
+  if (!activeBusiness.value) {
+    setMessage(loyaltyMessage, 'error', 'Select a business first.');
+    return;
+  }
+  if (!media.programIconFile) {
+    setMessage(loyaltyMessage, 'error', 'Select an image first.');
+    return;
+  }
+  loyaltyLoading.value = true;
+  try {
+    const formData = new FormData();
+    formData.append('kind', 'program_icon');
+    formData.append('file', media.programIconFile);
+    const data = await apiPostForm<LoyaltyMediaResponse>(
+      `/businesses/${activeBusiness.value.id}/loyalty-media`,
+      formData,
+      session.token
+    );
+    loyaltyConfig.programIconUrl = data.url;
+    setMessage(loyaltyMessage, 'success', 'Program icon uploaded.');
+  } catch (error) {
+    setMessage(loyaltyMessage, 'error', error.message);
+  } finally {
+    loyaltyLoading.value = false;
+  }
+}
+
+async function uploadRewardImage() {
+  if (!activeBusiness.value) {
+    setMessage(loyaltyMessage, 'error', 'Select a business first.');
+    return;
+  }
+  if (!media.rewardImageFile) {
+    setMessage(loyaltyMessage, 'error', 'Select an image first.');
+    return;
+  }
+  loyaltyLoading.value = true;
+  try {
+    const formData = new FormData();
+    formData.append('kind', 'reward_image');
+    formData.append('file', media.rewardImageFile);
+    const data = await apiPostForm<LoyaltyMediaResponse>(
+      `/businesses/${activeBusiness.value.id}/loyalty-media`,
+      formData,
+      session.token
+    );
+    loyaltyConfig.rewardImageUrl = data.url;
+    setMessage(loyaltyMessage, 'success', 'Reward image uploaded.');
   } catch (error) {
     setMessage(loyaltyMessage, 'error', error.message);
   } finally {

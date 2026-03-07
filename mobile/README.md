@@ -10,12 +10,16 @@ This file is the source-of-truth plan/status tracker for mobile/PWA work. Keep i
 - [x] Loyalty status screen (business + reward + progress)
 - [x] Visit history list (optional)
 - [ ] Magic link entry (optional future)
+- [ ] Show program name/description + stamp expiration info
+- [ ] Stamp transaction history (optional detailed audit)
+- [ ] Show program icon + reward image when provided
 
 ## Planned Screens
 
 - Magic link / OTP login
 - Loyalty status (business name, reward, progress)
 - Visit history (optional)
+- Stamp history (optional)
 
 ## Implementation Notes (MVP)
 
@@ -28,6 +32,9 @@ This file is the source-of-truth plan/status tracker for mobile/PWA work. Keep i
 - Status/history endpoints require the token phone number to match the `phoneNumber` in the URL.
 - Visit/redemption staff tracking happens in the backend; no customer-side input is needed.
 - For now, customers enter a `businessId` manually (from staff/QR). Magic links can replace this later.
+- Loyalty status now includes program metadata and optional stamp expiration info.
+- Status response fields include `programName`, `programDescription`, `stampExpirationDays`, `rewardAvailableAt`, and `lastStampAt`.
+- Status response fields also include `programIconUrl` and `rewardImageUrl`.
 
 ## API Checklist
 
@@ -36,6 +43,7 @@ This file is the source-of-truth plan/status tracker for mobile/PWA work. Keep i
 - GET `/me` (optional; can be used to confirm the authenticated phone number)
 - GET `/businesses/{businessId}/customers/{phoneNumber}` (status)
 - GET `/businesses/{businessId}/customers/{phoneNumber}/visits` (optional history)
+- GET `/businesses/{businessId}/customers/{phoneNumber}/stamps` (optional detailed history)
 
 ## Local Dev
 

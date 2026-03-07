@@ -6,7 +6,7 @@
         <span class="chip">Owner</span>
       </div>
       <p class="mt-2 text-sm text-dusk/70">
-        Create the first business and set the reward. This locks the reward per loyalty cycle.
+        Create the first business and set the program details. Reward text is locked per loyalty cycle.
       </p>
       <div class="mt-4 space-y-3">
         <input v-model="onboarding.name" class="input" placeholder="Business name" />
@@ -16,9 +16,22 @@
           <option value="fast_food">Fast food</option>
           <option value="retail">Retail</option>
         </select>
+        <input v-model="onboarding.programName" class="input" placeholder="Program name" />
+        <textarea
+          v-model="onboarding.programDescription"
+          class="textarea"
+          placeholder="Program description"
+        ></textarea>
         <input v-model="onboarding.rewardName" class="input" placeholder="Reward name" />
         <input v-model.number="onboarding.visitThreshold" class="input" type="number" min="1" />
         <textarea v-model="onboarding.optionalNote" class="textarea" placeholder="Optional note"></textarea>
+        <input
+          v-model="onboarding.stampExpirationDays"
+          class="input"
+          type="number"
+          min="1"
+          placeholder="Stamp expiration days (optional)"
+        />
         <button class="btn-primary w-full" :disabled="onboardingLoading || !canOnboard" @click="submitOnboarding">
           {{ onboardingLoading ? 'Creating...' : 'Create business' }}
         </button>
@@ -69,9 +82,12 @@ const onboarding = reactive({
   name: '',
   ownerPhone: session.phoneNumber || '',
   businessType: 'cafe',
+  programName: '',
+  programDescription: '',
   rewardName: '',
   visitThreshold: 9,
-  optionalNote: ''
+  optionalNote: '',
+  stampExpirationDays: '' as string | number
 });
 
 const onboardingLoading = ref(false);
@@ -80,6 +96,10 @@ const onboardingMessage = ref<Message | null>(null);
 const canOnboard = computed(() => session.purpose === 'owner');
 
 async function submitOnboarding() {
+  if (!onboarding.programName.trim()) {
+    setMessage(onboardingMessage, 'error', 'Program name is required.');
+    return;
+  }
   onboardingLoading.value = true;
   try {
     await apiPost(
@@ -88,9 +108,12 @@ async function submitOnboarding() {
         name: onboarding.name,
         ownerPhone: onboarding.ownerPhone,
         businessType: onboarding.businessType,
+        programName: onboarding.programName,
+        programDescription: onboarding.programDescription,
         rewardName: onboarding.rewardName,
         visitThreshold: onboarding.visitThreshold,
-        optionalNote: onboarding.optionalNote
+        optionalNote: onboarding.optionalNote,
+        stampExpirationDays: onboarding.stampExpirationDays || null
       },
       session.token
     );

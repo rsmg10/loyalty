@@ -10,6 +10,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<Customer> Customers => Set<Customer>();
     public DbSet<LoyaltyCycle> LoyaltyCycles => Set<LoyaltyCycle>();
     public DbSet<Visit> Visits => Set<Visit>();
+    public DbSet<StampTransaction> StampTransactions => Set<StampTransaction>();
     public DbSet<Redemption> Redemptions => Set<Redemption>();
     public DbSet<Staff> Staff => Set<Staff>();
     public DbSet<AuthOtp> AuthOtps => Set<AuthOtp>();
@@ -33,5 +34,11 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         modelBuilder.Entity<Staff>()
             .HasIndex(s => new { s.BusinessId, s.PhoneNumber })
             .IsUnique();
+
+        modelBuilder.Entity<StampTransaction>()
+            .HasIndex(t => new { t.BusinessId, t.CustomerId });
+
+        modelBuilder.Entity<StampTransaction>()
+            .HasIndex(t => t.IssuedAt);
     }
 }

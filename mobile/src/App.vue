@@ -4,7 +4,7 @@
       <span class="badge mx-auto">Customer Wallet</span>
       <h1 class="font-display text-3xl font-semibold text-dusk">Loyalty Pocket</h1>
       <p class="text-sm text-dusk/70">
-        Track your visits, see when your reward is ready, and keep a clean record of every stop.
+        Track your stamps, see when your reward is ready, and keep a clean record of every stop.
       </p>
     </header>
 
@@ -44,12 +44,37 @@
           </button>
           <div v-if="statusResult" class="rounded-xl bg-cream/70 p-4 text-sm text-dusk">
             <p class="font-semibold">{{ statusResult.businessName }}</p>
+            <p class="text-dusk/70">Program: {{ statusResult.programName }}</p>
+            <p v-if="statusResult.programDescription" class="text-dusk/70">
+              {{ statusResult.programDescription }}
+            </p>
+            <img
+              v-if="statusResult.programIconUrl"
+              :src="statusResult.programIconUrl"
+              alt="Program icon"
+              class="mt-2 h-16 w-16 rounded-2xl object-cover"
+            />
             <p class="text-dusk/70">Reward: {{ statusResult.rewardName }}</p>
+            <img
+              v-if="statusResult.rewardImageUrl"
+              :src="statusResult.rewardImageUrl"
+              alt="Reward"
+              class="mt-2 h-28 w-full rounded-2xl object-cover"
+            />
             <p class="text-dusk/70">
-              Progress: {{ statusResult.visitCount }} / {{ statusResult.visitThreshold }}
+              Progress: {{ statusResult.visitCount }} / {{ statusResult.visitThreshold }} stamps
             </p>
             <p v-if="statusResult.optionalNote" class="text-dusk/70">
               Note: {{ statusResult.optionalNote }}
+            </p>
+            <p v-if="statusResult.stampExpirationDays" class="text-dusk/70">
+              Stamp expiration: {{ statusResult.stampExpirationDays }} days
+            </p>
+            <p v-if="statusResult.lastStampAt" class="text-dusk/70">
+              Last stamp: {{ new Date(statusResult.lastStampAt).toLocaleString() }}
+            </p>
+            <p v-if="statusResult.rewardAvailableAt" class="text-dusk/70">
+              Reward available since: {{ new Date(statusResult.rewardAvailableAt).toLocaleString() }}
             </p>
           </div>
           <p v-if="statusMessage" :class="messageClass(statusMessage.tone)">
@@ -69,11 +94,33 @@
           </button>
           <ul v-if="history.length" class="space-y-2 text-xs text-dusk/70">
             <li v-for="entry in history" :key="entry.createdAt">
-              {{ new Date(entry.createdAt).toLocaleString() }}
+              {{ new Date(entry.createdAt).toLocaleString() }} · {{ entry.quantity }} stamp(s)
+              <span v-if="entry.reason">· {{ entry.reason }}</span>
             </li>
           </ul>
           <p v-if="historyMessage" :class="messageClass(historyMessage.tone)">
             {{ historyMessage.text }}
+          </p>
+        </div>
+      </div>
+
+      <div class="card animate-floatUp">
+        <div class="flex items-center justify-between">
+          <h2 class="font-display text-xl text-dusk">Stamp audit</h2>
+          <span class="badge">Optional</span>
+        </div>
+        <div class="mt-4 space-y-3">
+          <button class="btn-ghost" :disabled="stampHistoryLoading" @click="loadStampHistory">
+            {{ stampHistoryLoading ? 'Loading...' : 'Load stamp history' }}
+          </button>
+          <ul v-if="stampHistory.length" class="space-y-2 text-xs text-dusk/70">
+            <li v-for="entry in stampHistory" :key="entry.id">
+              {{ new Date(entry.issuedAt).toLocaleString() }} · {{ entry.quantity }} stamp(s) ·
+              {{ entry.reason }} · {{ entry.issuedByPhone }}
+            </li>
+          </ul>
+          <p v-if="stampHistoryMessage" :class="messageClass(stampHistoryMessage.tone)">
+            {{ stampHistoryMessage.text }}
           </p>
         </div>
       </div>
@@ -103,14 +150,32 @@ type AuthTokenResponse = {
 
 type CustomerStatusResponse = {
   businessName: string;
+  programName: string;
+  programDescription?: string | null;
+  programIconUrl?: string | null;
   rewardName: string;
+  rewardImageUrl?: string | null;
   visitCount: number;
   visitThreshold: number;
   optionalNote?: string | null;
+  stampExpirationDays?: number | null;
+  rewardAvailableAt?: string | null;
+  lastStampAt?: string | null;
 };
 
 type VisitHistoryItem = {
   createdAt: string;
+  quantity: number;
+  reason?: string | null;
+};
+
+type StampTransactionItem = {
+  id: number;
+  quantity: number;
+  reason: string;
+  issuedAt: string;
+  issuedByPhone: string;
+  staffId?: number | null;
 };
 
 const session = useSessionStore();
@@ -135,6 +200,10 @@ const statusMessage = ref<Message | null>(null);
 const history = ref<VisitHistoryItem[]>([]);
 const historyLoading = ref(false);
 const historyMessage = ref<Message | null>(null);
+
+const stampHistory = ref<StampTransactionItem[]>([]);
+const stampHistoryLoading = ref(false);
+const stampHistoryMessage = ref<Message | null>(null);
 
 watch(
   () => status.businessId,
@@ -232,9 +301,30 @@ async function loadHistory() {
   }
 }
 
+async function loadStampHistory() {
+  if (!status.businessId) {
+    setMessage(stampHistoryMessage, 'error', 'Enter a business ID.');
+    return;
+  }
+  stampHistoryLoading.value = true;
+  try {
+    const data = await apiGet<StampTransactionItem[]>(
+      `/businesses/${status.businessId}/customers/${encodeURIComponent(status.phone)}/stamps`,
+      session.token
+    );
+    stampHistory.value = data || [];
+    setMessage(stampHistoryMessage, 'success', 'Stamp history loaded.');
+  } catch (error) {
+    setMessage(stampHistoryMessage, 'error', error.message);
+  } finally {
+    stampHistoryLoading.value = false;
+  }
+}
+
 function logout() {
   session.clearAuth();
   statusResult.value = null;
   history.value = [];
+  stampHistory.value = [];
 }
 </script>

@@ -59,3 +59,26 @@ export function apiPost<T>(path: string, body: unknown, token?: string): Promise
 export function apiPut<T>(path: string, body: unknown, token?: string): Promise<T> {
   return request<T>(path, { method: 'PUT', body, token });
 }
+
+export async function apiPostForm<T>(path: string, formData: FormData, token?: string): Promise<T> {
+  const headers: Record<string, string> = { Accept: 'application/json' };
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_BASE}${path}`, {
+    method: 'POST',
+    headers,
+    body: formData
+  });
+
+  const data = await parseResponse(response);
+  if (!response.ok) {
+    const message = (data as { detail?: string; message?: string })?.detail
+      || (data as { detail?: string; message?: string })?.message
+      || response.statusText;
+    throw new Error(message || 'Request failed');
+  }
+
+  return data as T;
+}

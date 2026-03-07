@@ -4,7 +4,7 @@ public sealed class ConsoleMessagingService : IMessagingService
 {
     public Task SendVisitProgressAsync(string phoneNumber, string businessName, int visitCount, int visitThreshold)
     {
-        Console.WriteLine($"[SMS] {phoneNumber}: Thanks for visiting {businessName}. You're now at {visitCount} out of {visitThreshold} visits.");
+        Console.WriteLine($"[SMS] {phoneNumber}: Thanks for visiting {businessName}. You're now at {visitCount} out of {visitThreshold} stamps.");
         return Task.CompletedTask;
     }
 
