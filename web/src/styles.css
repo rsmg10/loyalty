@@ -1,0 +1,59 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  min-height: 100vh;
+  background:
+    radial-gradient(1200px 600px at 85% -10%, rgba(255, 107, 61, 0.18), transparent 70%),
+    radial-gradient(1000px 500px at 0% 100%, rgba(27, 138, 122, 0.2), transparent 65%),
+    linear-gradient(120deg, #f5efe6 0%, #f0e3d4 50%, #efe7dd 100%);
+}
+
+@layer components {
+  .glass-card {
+    @apply rounded-2xl border border-white/70 bg-white/70 p-6 shadow-card backdrop-blur;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-2 rounded-full border border-ink/10 bg-white/70 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-ink/80;
+  }
+
+  .input {
+    @apply w-full rounded-xl border border-ink/10 bg-white/90 px-3 py-2 text-sm text-ink shadow-sm focus:border-ember focus:outline-none focus:ring-2 focus:ring-ember/20;
+  }
+
+  .textarea {
+    @apply min-h-[96px] w-full rounded-xl border border-ink/10 bg-white/90 px-3 py-2 text-sm text-ink shadow-sm focus:border-ember focus:outline-none focus:ring-2 focus:ring-ember/20;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition;
+  }
+
+  .btn-primary {
+    @apply btn bg-ember text-white shadow-lift hover:-translate-y-0.5 hover:bg-clay;
+  }
+
+  .btn-ghost {
+    @apply btn border border-ink/10 bg-white/70 text-ink hover:border-ember/40 hover:text-ember;
+  }
+
+  .btn-ink {
+    @apply btn bg-dusk text-white shadow-lift hover:-translate-y-0.5;
+  }
+
+  .divider {
+    @apply h-px w-full bg-ink/10;
+  }
+}
+
+@layer utilities {
+  .section-title {
+    @apply font-display text-xl font-semibold tracking-tight;
+  }
+}

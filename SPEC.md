@@ -262,6 +262,7 @@ System MUST:
 Per customer, optional fields:
 
 - `display_name`
+- `mobile_number`
 - `usual_order`
 - `notes` (max 2 short strings)
 
@@ -280,7 +281,7 @@ Never enforced.
 
 - One visit per customer per session
 - No bulk additions
-- Staff identity logged (if enabled)
+- Staff identity logged for visits when staff is authenticated
 
 ### 8.2 Redemption
 
@@ -324,6 +325,7 @@ active
 ```
 id
 phone_number
+mobile_number
 display_name
 ```
 
@@ -333,6 +335,7 @@ display_name
 id
 customer_id
 business_id
+staff_id
 created_at
 ```
 

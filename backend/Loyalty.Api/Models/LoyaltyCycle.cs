@@ -7,4 +7,7 @@ public sealed class LoyaltyCycle
     public int BusinessId { get; set; }
     public int VisitCount { get; set; }
     public string Status { get; set; } = "PROGRESSING";
+    public string? RewardNameSnapshot { get; set; }
+    public int? VisitThresholdSnapshot { get; set; }
+    public string? OptionalNoteSnapshot { get; set; }
 }

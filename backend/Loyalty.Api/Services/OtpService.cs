@@ -1,3 +1,4 @@
+using Loyalty.Api.Data;
 using Loyalty.Api.Models;
 using Microsoft.EntityFrameworkCore;
 

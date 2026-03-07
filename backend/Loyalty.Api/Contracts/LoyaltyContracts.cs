@@ -7,6 +7,7 @@ public sealed record CustomerLookup(string PhoneNumber);
 public sealed record CustomerResponse(
     int Id,
     string PhoneNumber,
+    string? MobileNumber,
     string? DisplayName,
     string? UsualOrder,
     string? Notes
@@ -34,6 +35,7 @@ public sealed record CustomerStatusResponse(
 
 public sealed record CustomerProfileUpdate(
     string? DisplayName,
+    string? MobileNumber,
     string? UsualOrder,
     string? Notes
 );
