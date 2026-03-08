@@ -1,16 +1,11 @@
 import { defineStore } from 'pinia';
 import { apiGet } from '../lib/api';
+import type { AuthMeResponse, BusinessSummary } from '../lib/types';
 
 const TOKEN_KEY = 'loyalty_token';
 const PHONE_KEY = 'loyalty_phone';
 const PURPOSE_KEY = 'loyalty_purpose';
 const BUSINESS_KEY = 'loyalty_business';
-
-type BusinessSummary = {
-  id: number;
-  name: string;
-  businessType: string;
-};
 
 export type SessionPurpose = 'owner' | 'staff' | 'customer';
 
@@ -38,6 +33,11 @@ export const useSessionStore = defineStore('session', {
     meLoaded: false,
     loading: false
   }),
+  getters: {
+    isAuthenticated: (state) => Boolean(state.token),
+    hasBusinesses: (state) =>
+      state.ownerBusinesses.length > 0 || state.staffBusinesses.length > 0
+  },
   actions: {
     setAuth(token: string, phoneNumber: string, purpose: SessionPurpose) {
       this.token = token;
@@ -74,10 +74,7 @@ export const useSessionStore = defineStore('session', {
 
       this.loading = true;
       try {
-        const data = await apiGet<{
-          ownerBusinesses: BusinessSummary[];
-          staffBusinesses: BusinessSummary[];
-        }>('/me', this.token);
+        const data = await apiGet<AuthMeResponse>('/me', this.token);
         this.ownerBusinesses = data.ownerBusinesses || [];
         this.staffBusinesses = data.staffBusinesses || [];
 

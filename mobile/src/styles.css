@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -8,10 +9,21 @@
 
 body {
   min-height: 100vh;
+  font-family: 'Manrope', system-ui, -apple-system, sans-serif;
   background:
     radial-gradient(800px 420px at 80% -10%, rgba(255, 123, 92, 0.18), transparent 65%),
     radial-gradient(700px 480px at -10% 90%, rgba(47, 143, 164, 0.2), transparent 60%),
     linear-gradient(160deg, #f8f3ee 0%, #efe3d6 48%, #f5eee7 100%);
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(rgba(31, 26, 38, 0.04) 1px, transparent 1px);
+  background-size: 22px 22px;
+  opacity: 0.35;
 }
 
 @layer components {

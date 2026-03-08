@@ -13,6 +13,9 @@ export const useSessionStore = defineStore('session', {
     token: localStorage.getItem(TOKEN_KEY) || '',
     phoneNumber: localStorage.getItem(PHONE_KEY) || ''
   }),
+  getters: {
+    isAuthenticated: (state) => Boolean(state.token)
+  },
   actions: {
     setAuth(token: string, phoneNumber: string) {
       this.token = token;

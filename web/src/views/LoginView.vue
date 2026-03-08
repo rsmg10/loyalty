@@ -59,14 +59,16 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { apiPost } from '../lib/api';
+import { getErrorMessage } from '../lib/errors';
 import { messageClass, setMessage } from '../lib/messages';
 import type { Message } from '../lib/messages';
+import { useAuthApi } from '../composables/useAuthApi';
 import { useSessionStore } from '../stores/session';
 import type { SessionPurpose } from '../stores/session';
 
 const session = useSessionStore();
 const router = useRouter();
+const authApi = useAuthApi();
 
 const auth = reactive({
   phone: session.phoneNumber || '',
@@ -80,13 +82,13 @@ const authMessage = ref<Message | null>(null);
 async function requestOtp() {
   authLoading.value = true;
   try {
-    await apiPost('/auth/request-otp', {
+    await authApi.requestOtp({
       phoneNumber: auth.phone,
       purpose: auth.purpose
     });
     setMessage(authMessage, 'success', 'OTP sent. Check the console SMS in the backend logs.');
   } catch (error) {
-    setMessage(authMessage, 'error', error.message);
+    setMessage(authMessage, 'error', getErrorMessage(error));
   } finally {
     authLoading.value = false;
   }
@@ -95,7 +97,7 @@ async function requestOtp() {
 async function verifyOtp() {
   authLoading.value = true;
   try {
-    const data = await apiPost('/auth/verify-otp', {
+    const data = await authApi.verifyOtp({
       phoneNumber: auth.phone,
       purpose: auth.purpose,
       code: auth.code
@@ -106,7 +108,7 @@ async function verifyOtp() {
     router.push(hasBusinesses ? '/app' : '/onboarding');
     setMessage(authMessage, 'success', 'Signed in successfully.');
   } catch (error) {
-    setMessage(authMessage, 'error', error.message);
+    setMessage(authMessage, 'error', getErrorMessage(error));
   } finally {
     authLoading.value = false;
   }

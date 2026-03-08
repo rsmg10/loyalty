@@ -70,13 +70,14 @@
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { apiPost } from '../lib/api';
+import { getErrorMessage } from '../lib/errors';
 import { messageClass, setMessage } from '../lib/messages';
 import type { Message } from '../lib/messages';
 import { useSessionStore } from '../stores/session';
 
 const session = useSessionStore();
 const router = useRouter();
+const api = useLoyaltyApi(session.token);
 
 const onboarding = reactive({
   name: '',
@@ -102,26 +103,22 @@ async function submitOnboarding() {
   }
   onboardingLoading.value = true;
   try {
-    await apiPost(
-      '/onboarding',
-      {
-        name: onboarding.name,
-        ownerPhone: onboarding.ownerPhone,
-        businessType: onboarding.businessType,
-        programName: onboarding.programName,
-        programDescription: onboarding.programDescription,
-        rewardName: onboarding.rewardName,
-        visitThreshold: onboarding.visitThreshold,
-        optionalNote: onboarding.optionalNote,
-        stampExpirationDays: onboarding.stampExpirationDays || null
-      },
-      session.token
-    );
+    await api.onboard({
+      name: onboarding.name,
+      ownerPhone: onboarding.ownerPhone,
+      businessType: onboarding.businessType,
+      programName: onboarding.programName,
+      programDescription: onboarding.programDescription,
+      rewardName: onboarding.rewardName,
+      visitThreshold: onboarding.visitThreshold,
+      optionalNote: onboarding.optionalNote,
+      stampExpirationDays: onboarding.stampExpirationDays || null
+    });
     setMessage(onboardingMessage, 'success', 'Business created.');
     await session.fetchMe();
     router.push('/app');
   } catch (error) {
-    setMessage(onboardingMessage, 'error', error.message);
+    setMessage(onboardingMessage, 'error', getErrorMessage(error));
   } finally {
     onboardingLoading.value = false;
   }

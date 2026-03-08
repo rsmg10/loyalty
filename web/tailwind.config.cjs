@@ -12,8 +12,8 @@ module.exports = {
         clay: '#c86f4a'
       },
       fontFamily: {
-        display: ['"Space Grotesk"', '"Sora"', 'sans-serif'],
-        body: ['"Sora"', 'sans-serif']
+        display: ['"Fraunces"', 'serif'],
+        body: ['"Manrope"', 'sans-serif']
       },
       boxShadow: {
         lift: '0 18px 50px -24px rgba(28, 18, 12, 0.45)',
