@@ -10,6 +10,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
 builder.Services.AddScoped<IMessagingService, ConsoleMessagingService>();
 builder.Services.AddScoped<OtpService>();
+builder.Services.AddSingleton<LocalizationService>();
 builder.Services.Configure<ObjectStorageOptions>(builder.Configuration.GetSection("ObjectStorage"));
 builder.Services.AddSingleton<IObjectStorage>(sp =>
 {
@@ -33,16 +34,16 @@ using (var scope = app.Services.CreateScope())
 
 var visitCooldownMinutes = builder.Configuration.GetValue("Loyalty:VisitCooldownMinutes", 5);
 
-app.MapPost("/businesses", async (BusinessCreate request, HttpRequest httpRequest, AppDbContext db) =>
+app.MapPost("/businesses", async (BusinessCreate request, HttpRequest httpRequest, AppDbContext db, LocalizationService localizer) =>
 {
     if (string.IsNullOrWhiteSpace(request.Name) || string.IsNullOrWhiteSpace(request.OwnerPhone))
     {
-        return Results.BadRequest(new { detail = "Name and owner phone are required" });
+        return BadRequest(httpRequest, localizer, "Name and owner phone are required");
     }
 
     if (string.IsNullOrWhiteSpace(request.BusinessType))
     {
-        return Results.BadRequest(new { detail = "Business type is required" });
+        return BadRequest(httpRequest, localizer, "Business type is required");
     }
 
     var normalizedOwnerPhone = request.OwnerPhone.Trim();
@@ -69,27 +70,27 @@ app.MapPost("/businesses", async (BusinessCreate request, HttpRequest httpReques
     return Results.Ok(new BusinessResponse(business.Id, business.Name, business.OwnerPhone, business.CreatedAt));
 });
 
-app.MapPost("/onboarding", async (BusinessOnboardingRequest request, HttpRequest httpRequest, AppDbContext db) =>
+app.MapPost("/onboarding", async (BusinessOnboardingRequest request, HttpRequest httpRequest, AppDbContext db, LocalizationService localizer) =>
 {
     if (string.IsNullOrWhiteSpace(request.Name) || string.IsNullOrWhiteSpace(request.OwnerPhone))
     {
-        return Results.BadRequest(new { detail = "Name and owner phone are required" });
+        return BadRequest(httpRequest, localizer, "Name and owner phone are required");
     }
 
     if (string.IsNullOrWhiteSpace(request.BusinessType))
     {
-        return Results.BadRequest(new { detail = "Business type is required" });
+        return BadRequest(httpRequest, localizer, "Business type is required");
     }
 
     if (string.IsNullOrWhiteSpace(request.ProgramName)
         || string.IsNullOrWhiteSpace(request.RewardName)
         || request.VisitThreshold <= 0)
     {
-        return Results.BadRequest(new { detail = "Program name, reward name, and positive stamp threshold are required" });
+        return BadRequest(httpRequest, localizer, "Program name, reward name, and positive stamp threshold are required");
     }
     if (request.StampExpirationDays is not null && request.StampExpirationDays <= 0)
     {
-        return Results.BadRequest(new { detail = "Stamp expiration days must be positive when provided" });
+        return BadRequest(httpRequest, localizer, "Stamp expiration days must be positive when provided");
     }
 
     var normalizedOwnerPhone = request.OwnerPhone.Trim();
@@ -149,12 +150,13 @@ app.MapPost("/businesses/{businessId:int}/loyalty-config", async (
     int businessId,
     LoyaltyConfigCreate request,
     HttpRequest httpRequest,
-    AppDbContext db) =>
+    AppDbContext db,
+    LocalizationService localizer) =>
 {
     var business = await db.Businesses.FindAsync(businessId);
     if (business is null)
     {
-        return Results.NotFound(new { detail = "Business not found" });
+        return NotFound(httpRequest, localizer, "Business not found");
     }
 
     var session = await GetAuthSessionAsync(httpRequest, db);
@@ -172,11 +174,11 @@ app.MapPost("/businesses/{businessId:int}/loyalty-config", async (
         || string.IsNullOrWhiteSpace(request.RewardName)
         || request.VisitThreshold <= 0)
     {
-        return Results.BadRequest(new { detail = "Program name, reward name, and positive stamp threshold are required" });
+        return BadRequest(httpRequest, localizer, "Program name, reward name, and positive stamp threshold are required");
     }
     if (request.StampExpirationDays is not null && request.StampExpirationDays <= 0)
     {
-        return Results.BadRequest(new { detail = "Stamp expiration days must be positive when provided" });
+        return BadRequest(httpRequest, localizer, "Stamp expiration days must be positive when provided");
     }
 
     var config = await db.LoyaltyConfigs
@@ -218,7 +220,8 @@ app.MapPost("/businesses/{businessId:int}/visits", async (
     CustomerLookup request,
     HttpRequest httpRequest,
     AppDbContext db,
-    IMessagingService messagingService) =>
+    IMessagingService messagingService,
+    LocalizationService localizer) =>
 {
     var business = await db.Businesses
         .Include(b => b.LoyaltyConfig)
@@ -226,13 +229,13 @@ app.MapPost("/businesses/{businessId:int}/visits", async (
 
     if (business is null)
     {
-        return Results.NotFound(new { detail = "Business not found" });
+        return NotFound(httpRequest, localizer, "Business not found");
     }
 
     var config = business.LoyaltyConfig;
     if (config is null || !config.Active)
     {
-        return Results.BadRequest(new { detail = "Business has no active loyalty configuration" });
+        return BadRequest(httpRequest, localizer, "Business has no active loyalty configuration");
     }
 
     var session = await GetAuthSessionAsync(httpRequest, db);
@@ -248,7 +251,7 @@ app.MapPost("/businesses/{businessId:int}/visits", async (
 
     if (string.IsNullOrWhiteSpace(request.PhoneNumber))
     {
-        return Results.BadRequest(new { detail = "Phone number is required" });
+        return BadRequest(httpRequest, localizer, "Phone number is required");
     }
 
     var normalizedPhone = request.PhoneNumber.Trim();
@@ -323,12 +326,14 @@ app.MapPost("/businesses/{businessId:int}/visits", async (
 
         await db.SaveChangesAsync();
 
+        var language = GetRequestLanguage(httpRequest, localizer);
         if (cycle.Status == "REWARD_AVAILABLE")
         {
             await messagingService.SendRewardAvailableAsync(
                 customer.PhoneNumber,
                 business.Name,
-                rewardName);
+                rewardName,
+                language);
         }
         else
         {
@@ -336,7 +341,8 @@ app.MapPost("/businesses/{businessId:int}/visits", async (
                 customer.PhoneNumber,
                 business.Name,
                 cycle.VisitCount,
-                visitThreshold);
+                visitThreshold,
+                language);
         }
     }
     else if (expirationApplied)
@@ -357,7 +363,8 @@ app.MapPost("/businesses/{businessId:int}/stamps", async (
     StampIssueRequest request,
     HttpRequest httpRequest,
     AppDbContext db,
-    IMessagingService messagingService) =>
+    IMessagingService messagingService,
+    LocalizationService localizer) =>
 {
     var business = await db.Businesses
         .Include(b => b.LoyaltyConfig)
@@ -365,13 +372,13 @@ app.MapPost("/businesses/{businessId:int}/stamps", async (
 
     if (business is null)
     {
-        return Results.NotFound(new { detail = "Business not found" });
+        return NotFound(httpRequest, localizer, "Business not found");
     }
 
     var config = business.LoyaltyConfig;
     if (config is null || !config.Active)
     {
-        return Results.BadRequest(new { detail = "Business has no active loyalty configuration" });
+        return BadRequest(httpRequest, localizer, "Business has no active loyalty configuration");
     }
 
     var session = await GetAuthSessionAsync(httpRequest, db);
@@ -387,17 +394,17 @@ app.MapPost("/businesses/{businessId:int}/stamps", async (
 
     if (string.IsNullOrWhiteSpace(request.CustomerPhone))
     {
-        return Results.BadRequest(new { detail = "Customer phone is required" });
+        return BadRequest(httpRequest, localizer, "Customer phone is required");
     }
 
     if (request.Quantity <= 0)
     {
-        return Results.BadRequest(new { detail = "Stamp quantity must be positive" });
+        return BadRequest(httpRequest, localizer, "Stamp quantity must be positive");
     }
 
     if (string.IsNullOrWhiteSpace(request.Reason))
     {
-        return Results.BadRequest(new { detail = "Reason is required" });
+        return BadRequest(httpRequest, localizer, "Reason is required");
     }
 
     var sessionStaffId = await GetStaffIdForSessionAsync(db, business, session.PhoneNumber);
@@ -410,7 +417,7 @@ app.MapPost("/businesses/{businessId:int}/stamps", async (
 
         if (!staffExists)
         {
-            return Results.BadRequest(new { detail = "Staff member not found" });
+            return BadRequest(httpRequest, localizer, "Staff member not found");
         }
 
         if (sessionStaffId is not null && request.StaffId != sessionStaffId)
@@ -486,12 +493,14 @@ app.MapPost("/businesses/{businessId:int}/stamps", async (
 
     await db.SaveChangesAsync();
 
+    var language = GetRequestLanguage(httpRequest, localizer);
     if (cycle.Status == "REWARD_AVAILABLE")
     {
         await messagingService.SendRewardAvailableAsync(
             customer.PhoneNumber,
             business.Name,
-            rewardName);
+            rewardName,
+            language);
     }
     else
     {
@@ -499,7 +508,8 @@ app.MapPost("/businesses/{businessId:int}/stamps", async (
             customer.PhoneNumber,
             business.Name,
             cycle.VisitCount,
-            visitThreshold);
+            visitThreshold,
+            language);
     }
 
     return Results.Ok(new StampIssueResponse(
@@ -516,7 +526,8 @@ app.MapPost("/businesses/{businessId:int}/memberships", async (
     int businessId,
     CustomerLookup request,
     HttpRequest httpRequest,
-    AppDbContext db) =>
+    AppDbContext db,
+    LocalizationService localizer) =>
 {
     var business = await db.Businesses
         .Include(b => b.LoyaltyConfig)
@@ -524,13 +535,13 @@ app.MapPost("/businesses/{businessId:int}/memberships", async (
 
     if (business is null)
     {
-        return Results.NotFound(new { detail = "Business not found" });
+        return NotFound(httpRequest, localizer, "Business not found");
     }
 
     var config = business.LoyaltyConfig;
     if (config is null || !config.Active)
     {
-        return Results.BadRequest(new { detail = "Business has no active loyalty configuration" });
+        return BadRequest(httpRequest, localizer, "Business has no active loyalty configuration");
     }
 
     var session = await GetAuthSessionAsync(httpRequest, db);
@@ -546,7 +557,7 @@ app.MapPost("/businesses/{businessId:int}/memberships", async (
 
     if (string.IsNullOrWhiteSpace(request.PhoneNumber))
     {
-        return Results.BadRequest(new { detail = "Phone number is required" });
+        return BadRequest(httpRequest, localizer, "Phone number is required");
     }
 
     var normalizedPhone = request.PhoneNumber.Trim();
@@ -590,7 +601,8 @@ app.MapPost("/businesses/{businessId:int}/loyalty-media", async (
     int businessId,
     HttpRequest httpRequest,
     AppDbContext db,
-    IObjectStorage objectStorage) =>
+    IObjectStorage objectStorage,
+    LocalizationService localizer) =>
 {
     var business = await db.Businesses
         .Include(b => b.LoyaltyConfig)
@@ -598,13 +610,13 @@ app.MapPost("/businesses/{businessId:int}/loyalty-media", async (
 
     if (business is null)
     {
-        return Results.NotFound(new { detail = "Business not found" });
+        return NotFound(httpRequest, localizer, "Business not found");
     }
 
     var config = business.LoyaltyConfig;
     if (config is null || !config.Active)
     {
-        return Results.BadRequest(new { detail = "Business has no active loyalty configuration" });
+        return BadRequest(httpRequest, localizer, "Business has no active loyalty configuration");
     }
 
     var session = await GetAuthSessionAsync(httpRequest, db);
@@ -620,7 +632,7 @@ app.MapPost("/businesses/{businessId:int}/loyalty-media", async (
 
     if (!httpRequest.HasFormContentType)
     {
-        return Results.BadRequest(new { detail = "Multipart form data is required" });
+        return BadRequest(httpRequest, localizer, "Multipart form data is required");
     }
 
     var form = await httpRequest.ReadFormAsync();
@@ -629,18 +641,18 @@ app.MapPost("/businesses/{businessId:int}/loyalty-media", async (
 
     if (string.IsNullOrWhiteSpace(kind))
     {
-        return Results.BadRequest(new { detail = "Kind is required" });
+        return BadRequest(httpRequest, localizer, "Kind is required");
     }
 
     if (file is null || file.Length == 0)
     {
-        return Results.BadRequest(new { detail = "File is required" });
+        return BadRequest(httpRequest, localizer, "File is required");
     }
 
     if (!string.Equals(kind, "program_icon", StringComparison.OrdinalIgnoreCase)
         && !string.Equals(kind, "reward_image", StringComparison.OrdinalIgnoreCase))
     {
-        return Results.BadRequest(new { detail = "Invalid kind. Use program_icon or reward_image." });
+        return BadRequest(httpRequest, localizer, "Invalid kind. Use program_icon or reward_image.");
     }
 
     var extension = Path.GetExtension(file.FileName);
@@ -672,7 +684,8 @@ app.MapPost("/businesses/{businessId:int}/loyalty-media", async (
     }
     catch (InvalidOperationException ex)
     {
-        return Results.BadRequest(new { detail = ex.Message });
+        var language = GetRequestLanguage(httpRequest, localizer);
+        return Results.BadRequest(new { detail = localizer.Translate(ex.Message, language) });
     }
 });
 
@@ -681,7 +694,8 @@ app.MapPost("/businesses/{businessId:int}/redemptions", async (
     RedemptionRequest request,
     HttpRequest httpRequest,
     AppDbContext db,
-    IMessagingService messagingService) =>
+    IMessagingService messagingService,
+    LocalizationService localizer) =>
 {
     var business = await db.Businesses
         .Include(b => b.LoyaltyConfig)
@@ -689,13 +703,13 @@ app.MapPost("/businesses/{businessId:int}/redemptions", async (
 
     if (business is null)
     {
-        return Results.NotFound(new { detail = "Business not found" });
+        return NotFound(httpRequest, localizer, "Business not found");
     }
 
     var config = business.LoyaltyConfig;
     if (config is null || !config.Active)
     {
-        return Results.BadRequest(new { detail = "Business has no active loyalty configuration" });
+        return BadRequest(httpRequest, localizer, "Business has no active loyalty configuration");
     }
 
     var session = await GetAuthSessionAsync(httpRequest, db);
@@ -719,7 +733,7 @@ app.MapPost("/businesses/{businessId:int}/redemptions", async (
 
         if (!staffExists)
         {
-            return Results.BadRequest(new { detail = "Staff member not found" });
+            return BadRequest(httpRequest, localizer, "Staff member not found");
         }
 
         if (sessionStaffId is not null && request.StaffId != sessionStaffId)
@@ -734,14 +748,14 @@ app.MapPost("/businesses/{businessId:int}/redemptions", async (
 
     if (string.IsNullOrWhiteSpace(request.CustomerPhone))
     {
-        return Results.BadRequest(new { detail = "Customer phone is required" });
+        return BadRequest(httpRequest, localizer, "Customer phone is required");
     }
 
     var normalizedPhone = request.CustomerPhone.Trim();
     var customer = await db.Customers.FirstOrDefaultAsync(c => c.PhoneNumber == normalizedPhone);
     if (customer is null)
     {
-        return Results.BadRequest(new { detail = "Customer not found" });
+        return BadRequest(httpRequest, localizer, "Customer not found");
     }
 
     var cycle = await db.LoyaltyCycles
@@ -749,7 +763,7 @@ app.MapPost("/businesses/{businessId:int}/redemptions", async (
 
     if (cycle is null)
     {
-        return Results.BadRequest(new { detail = "Reward not available" });
+        return BadRequest(httpRequest, localizer, "Reward not available");
     }
 
     if (cycle.RewardNameSnapshot is null || cycle.VisitThresholdSnapshot is null)
@@ -772,7 +786,7 @@ app.MapPost("/businesses/{businessId:int}/redemptions", async (
         {
             await db.SaveChangesAsync();
         }
-        return Results.BadRequest(new { detail = "Reward not available" });
+        return BadRequest(httpRequest, localizer, "Reward not available");
     }
 
     var redemptionRewardName = cycle.RewardNameSnapshot ?? config.RewardName;
@@ -795,10 +809,12 @@ app.MapPost("/businesses/{businessId:int}/redemptions", async (
     db.Redemptions.Add(redemption);
     await db.SaveChangesAsync();
 
+    var language = GetRequestLanguage(httpRequest, localizer);
     await messagingService.SendRewardRedeemedAsync(
         customer.PhoneNumber,
         business.Name,
-        redemptionRewardName);
+        redemptionRewardName,
+        language);
 
     return Results.Ok(new RedemptionResponse(
         redemption.RewardName,
@@ -811,7 +827,8 @@ app.MapGet("/businesses/{businessId:int}/customers/{phoneNumber}", async (
     int businessId,
     string phoneNumber,
     HttpRequest httpRequest,
-    AppDbContext db) =>
+    AppDbContext db,
+    LocalizationService localizer) =>
 {
     var business = await db.Businesses
         .Include(b => b.LoyaltyConfig)
@@ -819,18 +836,18 @@ app.MapGet("/businesses/{businessId:int}/customers/{phoneNumber}", async (
 
     if (business is null)
     {
-        return Results.NotFound(new { detail = "Business not found" });
+        return NotFound(httpRequest, localizer, "Business not found");
     }
 
     var config = business.LoyaltyConfig;
     if (config is null || !config.Active)
     {
-        return Results.BadRequest(new { detail = "Business has no active loyalty configuration" });
+        return BadRequest(httpRequest, localizer, "Business has no active loyalty configuration");
     }
 
     if (string.IsNullOrWhiteSpace(phoneNumber))
     {
-        return Results.BadRequest(new { detail = "Phone number is required" });
+        return BadRequest(httpRequest, localizer, "Phone number is required");
     }
 
     var session = await GetAuthSessionAsync(httpRequest, db);
@@ -850,7 +867,7 @@ app.MapGet("/businesses/{businessId:int}/customers/{phoneNumber}", async (
     var customer = await db.Customers.FirstOrDefaultAsync(c => c.PhoneNumber == normalizedPhone);
     if (customer is null)
     {
-        return Results.NotFound(new { detail = "Customer not found" });
+        return NotFound(httpRequest, localizer, "Customer not found");
     }
 
     var cycle = await db.LoyaltyCycles
@@ -908,12 +925,13 @@ app.MapPut("/businesses/{businessId:int}/customers/{phoneNumber}/profile", async
     string phoneNumber,
     CustomerProfileUpdate request,
     HttpRequest httpRequest,
-    AppDbContext db) =>
+    AppDbContext db,
+    LocalizationService localizer) =>
 {
     var business = await db.Businesses.FirstOrDefaultAsync(b => b.Id == businessId);
     if (business is null)
     {
-        return Results.NotFound(new { detail = "Business not found" });
+        return NotFound(httpRequest, localizer, "Business not found");
     }
 
     var session = await GetAuthSessionAsync(httpRequest, db);
@@ -929,7 +947,7 @@ app.MapPut("/businesses/{businessId:int}/customers/{phoneNumber}/profile", async
 
     if (string.IsNullOrWhiteSpace(phoneNumber))
     {
-        return Results.BadRequest(new { detail = "Phone number is required" });
+        return BadRequest(httpRequest, localizer, "Phone number is required");
     }
 
     var normalizedPhone = phoneNumber.Trim();
@@ -961,17 +979,18 @@ app.MapGet("/businesses/{businessId:int}/customers/{phoneNumber}/visits", async 
     int businessId,
     string phoneNumber,
     HttpRequest httpRequest,
-    AppDbContext db) =>
+    AppDbContext db,
+    LocalizationService localizer) =>
 {
     var business = await db.Businesses.FirstOrDefaultAsync(b => b.Id == businessId);
     if (business is null)
     {
-        return Results.NotFound(new { detail = "Business not found" });
+        return NotFound(httpRequest, localizer, "Business not found");
     }
 
     if (string.IsNullOrWhiteSpace(phoneNumber))
     {
-        return Results.BadRequest(new { detail = "Phone number is required" });
+        return BadRequest(httpRequest, localizer, "Phone number is required");
     }
 
     var session = await GetAuthSessionAsync(httpRequest, db);
@@ -991,7 +1010,7 @@ app.MapGet("/businesses/{businessId:int}/customers/{phoneNumber}/visits", async 
     var customer = await db.Customers.FirstOrDefaultAsync(c => c.PhoneNumber == normalizedPhone);
     if (customer is null)
     {
-        return Results.NotFound(new { detail = "Customer not found" });
+        return NotFound(httpRequest, localizer, "Customer not found");
     }
 
     var stampVisits = await db.StampTransactions
@@ -1018,17 +1037,18 @@ app.MapGet("/businesses/{businessId:int}/customers/{phoneNumber}/stamps", async 
     int businessId,
     string phoneNumber,
     HttpRequest httpRequest,
-    AppDbContext db) =>
+    AppDbContext db,
+    LocalizationService localizer) =>
 {
     var business = await db.Businesses.FirstOrDefaultAsync(b => b.Id == businessId);
     if (business is null)
     {
-        return Results.NotFound(new { detail = "Business not found" });
+        return NotFound(httpRequest, localizer, "Business not found");
     }
 
     if (string.IsNullOrWhiteSpace(phoneNumber))
     {
-        return Results.BadRequest(new { detail = "Phone number is required" });
+        return BadRequest(httpRequest, localizer, "Phone number is required");
     }
 
     var session = await GetAuthSessionAsync(httpRequest, db);
@@ -1048,7 +1068,7 @@ app.MapGet("/businesses/{businessId:int}/customers/{phoneNumber}/stamps", async 
     var customer = await db.Customers.FirstOrDefaultAsync(c => c.PhoneNumber == normalizedPhone);
     if (customer is null)
     {
-        return Results.NotFound(new { detail = "Customer not found" });
+        return NotFound(httpRequest, localizer, "Customer not found");
     }
 
     var stamps = await db.StampTransactions
@@ -1069,12 +1089,13 @@ app.MapGet("/businesses/{businessId:int}/customers/{phoneNumber}/stamps", async 
 app.MapGet("/businesses/{businessId:int}/redemptions", async (
     int businessId,
     HttpRequest httpRequest,
-    AppDbContext db) =>
+    AppDbContext db,
+    LocalizationService localizer) =>
 {
     var business = await db.Businesses.FirstOrDefaultAsync(b => b.Id == businessId);
     if (business is null)
     {
-        return Results.NotFound(new { detail = "Business not found" });
+        return NotFound(httpRequest, localizer, "Business not found");
     }
 
     var session = await GetAuthSessionAsync(httpRequest, db);
@@ -1106,12 +1127,13 @@ app.MapGet("/businesses/{businessId:int}/redemptions", async (
 app.MapGet("/businesses/{businessId:int}/stats", async (
     int businessId,
     HttpRequest httpRequest,
-    AppDbContext db) =>
+    AppDbContext db,
+    LocalizationService localizer) =>
 {
     var business = await db.Businesses.FirstOrDefaultAsync(b => b.Id == businessId);
     if (business is null)
     {
-        return Results.NotFound(new { detail = "Business not found" });
+        return NotFound(httpRequest, localizer, "Business not found");
     }
 
     var session = await GetAuthSessionAsync(httpRequest, db);
@@ -1144,30 +1166,35 @@ app.MapGet("/businesses/{businessId:int}/stats", async (
 
 app.MapPost("/auth/request-otp", async (
     AuthRequestOtp request,
-    OtpService otpService) =>
+    HttpRequest httpRequest,
+    OtpService otpService,
+    LocalizationService localizer) =>
 {
     if (string.IsNullOrWhiteSpace(request.PhoneNumber) || string.IsNullOrWhiteSpace(request.Purpose))
     {
-        return Results.BadRequest(new { detail = "Phone number and purpose are required" });
+        return BadRequest(httpRequest, localizer, "Phone number and purpose are required");
     }
 
     var normalizedPhone = request.PhoneNumber.Trim();
     var purpose = request.Purpose.Trim();
+    var language = GetRequestLanguage(httpRequest, localizer);
 
-    await otpService.RequestOtpAsync(normalizedPhone, purpose);
+    await otpService.RequestOtpAsync(normalizedPhone, purpose, language);
 
     return Results.Ok(new { status = "sent" });
 });
 
 app.MapPost("/auth/verify-otp", async (
     AuthVerifyOtp request,
-    OtpService otpService) =>
+    HttpRequest httpRequest,
+    OtpService otpService,
+    LocalizationService localizer) =>
 {
     if (string.IsNullOrWhiteSpace(request.PhoneNumber)
         || string.IsNullOrWhiteSpace(request.Purpose)
         || string.IsNullOrWhiteSpace(request.Code))
     {
-        return Results.BadRequest(new { detail = "Phone number, purpose, and code are required" });
+        return BadRequest(httpRequest, localizer, "Phone number, purpose, and code are required");
     }
 
     var normalizedPhone = request.PhoneNumber.Trim();
@@ -1177,7 +1204,7 @@ app.MapPost("/auth/verify-otp", async (
     var session = await otpService.VerifyOtpAsync(normalizedPhone, code, purpose);
     if (session is null)
     {
-        return Results.BadRequest(new { detail = "Invalid or expired code" });
+        return BadRequest(httpRequest, localizer, "Invalid or expired code");
     }
 
     return Results.Ok(new AuthTokenResponse(session.Token, session.ExpiresAt));
@@ -1218,17 +1245,18 @@ app.MapPost("/businesses/{businessId:int}/staff", async (
     int businessId,
     StaffCreate request,
     HttpRequest httpRequest,
-    AppDbContext db) =>
+    AppDbContext db,
+    LocalizationService localizer) =>
 {
     if (string.IsNullOrWhiteSpace(request.DisplayName) || string.IsNullOrWhiteSpace(request.PhoneNumber))
     {
-        return Results.BadRequest(new { detail = "Display name and phone number are required" });
+        return BadRequest(httpRequest, localizer, "Display name and phone number are required");
     }
 
     var business = await db.Businesses.FirstOrDefaultAsync(b => b.Id == businessId);
     if (business is null)
     {
-        return Results.NotFound(new { detail = "Business not found" });
+        return NotFound(httpRequest, localizer, "Business not found");
     }
 
     var session = await GetAuthSessionAsync(httpRequest, db);
@@ -1264,12 +1292,13 @@ app.MapPost("/businesses/{businessId:int}/staff", async (
 app.MapGet("/businesses/{businessId:int}/staff", async (
     int businessId,
     HttpRequest httpRequest,
-    AppDbContext db) =>
+    AppDbContext db,
+    LocalizationService localizer) =>
 {
     var business = await db.Businesses.FirstOrDefaultAsync(b => b.Id == businessId);
     if (business is null)
     {
-        return Results.NotFound(new { detail = "Business not found" });
+        return NotFound(httpRequest, localizer, "Business not found");
     }
 
     var session = await GetAuthSessionAsync(httpRequest, db);
@@ -1297,7 +1326,11 @@ app.MapGet("/businesses/{businessId:int}/staff", async (
     return Results.Ok(staffMembers);
 });
 
-app.MapGet("/businesses/{businessId:int}", async (int businessId, HttpRequest httpRequest, AppDbContext db) =>
+app.MapGet("/businesses/{businessId:int}", async (
+    int businessId,
+    HttpRequest httpRequest,
+    AppDbContext db,
+    LocalizationService localizer) =>
 {
     var business = await db.Businesses
         .Include(b => b.LoyaltyConfig)
@@ -1305,7 +1338,7 @@ app.MapGet("/businesses/{businessId:int}", async (int businessId, HttpRequest ht
 
     if (business is null)
     {
-        return Results.NotFound(new { detail = "Business not found" });
+        return NotFound(httpRequest, localizer, "Business not found");
     }
 
     var session = await GetAuthSessionAsync(httpRequest, db);
@@ -1321,7 +1354,7 @@ app.MapGet("/businesses/{businessId:int}", async (int businessId, HttpRequest ht
 
     if (business.LoyaltyConfig is null || !business.LoyaltyConfig.Active)
     {
-        return Results.BadRequest(new { detail = "Business has no active loyalty configuration" });
+        return BadRequest(httpRequest, localizer, "Business has no active loyalty configuration");
     }
 
     return Results.Ok(new BusinessDetailResponse(
@@ -1477,4 +1510,43 @@ static void ResetCycle(LoyaltyCycle cycle)
     cycle.Status = "PROGRESSING";
     cycle.LastStampAt = null;
     cycle.RewardAvailableAt = null;
+}
+
+static string GetRequestLanguage(HttpRequest request, LocalizationService localizer)
+{
+    string? language = null;
+
+    if (request.Query.TryGetValue("lang", out var queryValue))
+    {
+        language = queryValue.ToString();
+    }
+
+    if (string.IsNullOrWhiteSpace(language) && request.Headers.TryGetValue("X-Lang", out var headerValue))
+    {
+        language = headerValue.ToString();
+    }
+
+    if (string.IsNullOrWhiteSpace(language) && request.Headers.TryGetValue("Accept-Language", out var acceptLanguage))
+    {
+        language = acceptLanguage
+            .ToString()
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .FirstOrDefault();
+    }
+
+    return localizer.ResolveLanguage(language);
+}
+
+static IResult BadRequest(HttpRequest request, LocalizationService localizer, string key)
+{
+    var language = GetRequestLanguage(request, localizer);
+    var message = localizer.Translate(key, language);
+    return Results.BadRequest(new { detail = message });
+}
+
+static IResult NotFound(HttpRequest request, LocalizationService localizer, string key)
+{
+    var language = GetRequestLanguage(request, localizer);
+    var message = localizer.Translate(key, language);
+    return Results.NotFound(new { detail = message });
 }

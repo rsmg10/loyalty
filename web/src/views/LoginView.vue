@@ -2,26 +2,26 @@
   <main class="mx-auto grid w-full max-w-6xl gap-6 px-6 lg:grid-cols-[360px_1fr]">
     <section class="glass-card animate-rise">
       <div class="flex items-center justify-between">
-        <h2 class="section-title">Access</h2>
-        <span class="chip">OTP</span>
+        <h2 class="section-title">{{ $t('auth.access') }}</h2>
+        <span class="chip">{{ $t('auth.otp') }}</span>
       </div>
       <div class="mt-4 space-y-4">
-        <label class="text-xs font-semibold uppercase tracking-wide text-dusk/70">Phone</label>
-        <input v-model="auth.phone" class="input" placeholder="+966 5X XXX XXXX" />
-        <label class="text-xs font-semibold uppercase tracking-wide text-dusk/70">Purpose</label>
+        <label class="text-xs font-semibold uppercase tracking-wide text-dusk/70">{{ $t('auth.phone') }}</label>
+        <input v-model="auth.phone" class="input" :placeholder="$t('auth.phone')" />
+        <label class="text-xs font-semibold uppercase tracking-wide text-dusk/70">{{ $t('auth.purpose') }}</label>
         <select v-model="auth.purpose" class="input">
-          <option value="owner">Owner</option>
-          <option value="staff">Staff</option>
-          <option value="customer">Customer</option>
+          <option value="owner">{{ $t('auth.purposeOwner') }}</option>
+          <option value="staff">{{ $t('auth.purposeStaff') }}</option>
+          <option value="customer">{{ $t('auth.purposeCustomer') }}</option>
         </select>
         <button class="btn-ghost w-full" :disabled="authLoading" @click="requestOtp">
-          {{ authLoading ? 'Sending...' : 'Request OTP' }}
+          {{ authLoading ? $t('auth.sending') : $t('auth.requestOtp') }}
         </button>
         <div class="divider"></div>
-        <label class="text-xs font-semibold uppercase tracking-wide text-dusk/70">OTP Code</label>
-        <input v-model="auth.code" class="input" placeholder="6-digit code" />
+        <label class="text-xs font-semibold uppercase tracking-wide text-dusk/70">{{ $t('auth.otpCode') }}</label>
+        <input v-model="auth.code" class="input" :placeholder="$t('auth.otpCode')" />
         <button class="btn-primary w-full" :disabled="authLoading" @click="verifyOtp">
-          {{ authLoading ? 'Verifying...' : 'Verify & Sign in' }}
+          {{ authLoading ? $t('auth.verifying') : $t('auth.verify') }}
         </button>
         <p v-if="authMessage" :class="messageClass(authMessage.tone)">
           {{ authMessage.text }}
@@ -31,26 +31,20 @@
 
     <section class="glass-card animate-rise">
       <div class="flex items-center justify-between">
-        <h2 class="section-title">What this unlocks</h2>
-        <span class="chip">MVP</span>
+        <h2 class="section-title">{{ $t('onboarding.nextUp') }}</h2>
+        <span class="chip">{{ $t('onboarding.setup') }}</span>
       </div>
       <div class="mt-4 space-y-4 text-sm text-dusk/70">
-        <p>
-          Staff can record visits, redeem rewards, and capture customer context in seconds. Owners can configure
-          the reward, manage staff, and audit redemptions.
-        </p>
+        <p>{{ $t('app.description') }}</p>
         <div class="rounded-xl border border-white/60 bg-white/70 p-4">
-          <p class="text-xs font-semibold uppercase tracking-wider text-dusk/60">Today&apos;s focus</p>
+          <p class="text-xs font-semibold uppercase tracking-wider text-dusk/60">{{ $t('onboarding.remember') }}</p>
           <ul class="mt-3 space-y-2">
-            <li>• OTP login with role awareness</li>
-            <li>• Business selector with live status</li>
-            <li>• Fast counter actions</li>
+            <li>• {{ $t('dashboard.frontCounter') }}</li>
+            <li>• {{ $t('dashboard.customerCare') }}</li>
+            <li>• {{ $t('dashboard.ownerTools') }}</li>
           </ul>
         </div>
-        <p>
-          When you verify, you&apos;ll be routed to your business workspace. If you&apos;re a new owner, the system
-          will guide you through onboarding.
-        </p>
+        <p>{{ $t('onboarding.snapshot') }}</p>
       </div>
     </section>
   </main>
@@ -65,10 +59,12 @@ import type { Message } from '../lib/messages';
 import { useAuthApi } from '../composables/useAuthApi';
 import { useSessionStore } from '../stores/session';
 import type { SessionPurpose } from '../stores/session';
+import { useI18n } from 'vue-i18n';
 
 const session = useSessionStore();
 const router = useRouter();
 const authApi = useAuthApi();
+const { t } = useI18n();
 
 const auth = reactive({
   phone: session.phoneNumber || '',
@@ -86,7 +82,7 @@ async function requestOtp() {
       phoneNumber: auth.phone,
       purpose: auth.purpose
     });
-    setMessage(authMessage, 'success', 'OTP sent. Check the console SMS in the backend logs.');
+    setMessage(authMessage, 'success', t('auth.otpSent'));
   } catch (error) {
     setMessage(authMessage, 'error', getErrorMessage(error));
   } finally {
@@ -106,7 +102,7 @@ async function verifyOtp() {
     await session.fetchMe();
     const hasBusinesses = session.ownerBusinesses.length > 0 || session.staffBusinesses.length > 0;
     router.push(hasBusinesses ? '/app' : '/onboarding');
-    setMessage(authMessage, 'success', 'Signed in successfully.');
+    setMessage(authMessage, 'success', t('auth.signedIn'));
   } catch (error) {
     setMessage(authMessage, 'error', getErrorMessage(error));
   } finally {

@@ -1,28 +1,28 @@
 <template>
   <div class="glass-card animate-rise">
     <div class="flex items-center justify-between">
-      <h2 class="section-title">Visit entry</h2>
-      <span class="chip">Live</span>
+      <h2 class="section-title">{{ $t('cards.visitEntry') }}</h2>
+      <span class="chip">{{ $t('cards.live') }}</span>
     </div>
-    <p class="mt-2 text-sm text-dusk/70">
-      Record a purchase stamp from a customer visit. Cooldown and reward state are enforced server-side.
-    </p>
+    <p class="mt-2 text-sm text-dusk/70">{{ $t('cards.visitDescription') }}</p>
     <div class="mt-4 space-y-3">
       <input
         class="input"
-        placeholder="Customer phone"
+        :placeholder="$t('forms.customerPhone')"
         :value="phone"
         @input="$emit('update:phone', ($event.target as HTMLInputElement).value)"
       />
       <button class="btn-primary w-full" :disabled="loading" @click="$emit('record')">
-        {{ loading ? 'Recording...' : 'Record visit' }}
+        {{ loading ? $t('cards.recording') : $t('cards.recordVisit') }}
       </button>
       <div v-if="result" class="rounded-xl bg-sand/70 p-3 text-sm">
-        <p class="font-semibold">{{ result.rewardAvailable ? 'Reward available' : 'Progress updated' }}</p>
-        <p class="text-dusk/70">
-          {{ result.visitCount }} / {{ result.visitThreshold }} stamps
+        <p class="font-semibold">
+          {{ result.rewardAvailable ? $t('cards.rewardAvailable') : $t('cards.progressUpdated') }}
         </p>
-        <p class="text-dusk/70">Reward: {{ result.rewardName }}</p>
+        <p class="text-dusk/70">
+          {{ result.visitCount }} / {{ result.visitThreshold }} {{ $t('cards.stamps') }}
+        </p>
+        <p class="text-dusk/70">{{ $t('cards.reward') }}: {{ result.rewardName }}</p>
       </div>
       <p v-if="message" :class="messageClass(message.tone)">
         {{ message.text }}

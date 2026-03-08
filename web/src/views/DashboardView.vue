@@ -31,10 +31,8 @@
 
     <section class="flex flex-col gap-6">
       <section v-if="!activeBusiness" class="glass-card animate-rise">
-        <h2 class="section-title">Pick a business</h2>
-        <p class="mt-2 text-sm text-dusk/70">
-          Use the selector on the left to choose where you are operating right now.
-        </p>
+        <h2 class="section-title">{{ $t('dashboard.pickBusiness') }}</h2>
+        <p class="mt-2 text-sm text-dusk/70">{{ $t('dashboard.pickHint') }}</p>
       </section>
 
       <section v-else class="space-y-6">
@@ -172,7 +170,7 @@
     class="fixed bottom-4 left-1/2 z-40 flex -translate-x-1/2 items-center gap-2 rounded-full border border-white/70 bg-white/80 p-2 shadow-card backdrop-blur lg:hidden"
   >
     <button class="btn-mini" @click="toggleQuickActions">
-      {{ quickActionsOpen ? 'Hide' : 'Actions' }}
+      {{ quickActionsOpen ? $t('nav.hide') : $t('nav.actions') }}
     </button>
     <div v-if="quickActionsOpen" class="flex gap-2">
       <button
@@ -180,14 +178,14 @@
         :class="activeSection === 'front-counter' ? 'border-ember/40 text-ember' : ''"
         @click="jumpTo('front-counter')"
       >
-        Counter
+        {{ $t('nav.counter') }}
       </button>
       <button
         class="btn-mini"
         :class="activeSection === 'customer-care' ? 'border-ember/40 text-ember' : ''"
         @click="jumpTo('customer-care')"
       >
-        Customers
+        {{ $t('nav.customers') }}
       </button>
       <button
         v-if="isOwner"
@@ -195,7 +193,7 @@
         :class="activeSection === 'owner-tools' ? 'border-ember/40 text-ember' : ''"
         @click="jumpTo('owner-tools')"
       >
-        Owner
+        {{ $t('nav.owner') }}
       </button>
     </div>
   </div>
@@ -207,6 +205,7 @@ import { getErrorMessage } from '../lib/errors';
 import { setMessage } from '../lib/messages';
 import type { Message } from '../lib/messages';
 import { useLoyaltyApi } from '../composables/useLoyaltyApi';
+import { useI18n } from 'vue-i18n';
 import type {
   BusinessStatsResponse,
   CustomerStatusResponse,
@@ -239,11 +238,12 @@ type BusinessOption = {
   id: number;
   name: string;
   businessType: string;
-  role: 'Owner' | 'Staff';
+  role: 'owner' | 'staff';
 };
 
 const session = useSessionStore();
 const api = computed(() => useLoyaltyApi(session.token));
+const { t } = useI18n();
 
 const visit = reactive({
   phone: ''
@@ -335,11 +335,11 @@ const quickActionsOpen = ref(false);
 const businessOptions = computed<BusinessOption[]>(() => {
   const map = new Map();
   session.ownerBusinesses.forEach((business) => {
-    map.set(business.id, { ...business, role: 'Owner' });
+    map.set(business.id, { ...business, role: 'owner' });
   });
   session.staffBusinesses.forEach((business) => {
     if (!map.has(business.id)) {
-      map.set(business.id, { ...business, role: 'Staff' });
+      map.set(business.id, { ...business, role: 'staff' });
     }
   });
   return Array.from(map.values());
@@ -441,14 +441,14 @@ onMounted(() => {
 
 async function recordVisit() {
   if (!activeBusiness.value) {
-    setMessage(visitMessage, 'error', 'Select a business first.');
+    setMessage(visitMessage, 'error', t('messages.selectBusiness'));
     return;
   }
   visitLoading.value = true;
   try {
     const data = await api.value.recordVisit(activeBusiness.value.id, visit.phone);
     visitResult.value = data;
-    setMessage(visitMessage, 'success', 'Visit processed.');
+    setMessage(visitMessage, 'success', t('messages.visitProcessed'));
   } catch (error) {
     setMessage(visitMessage, 'error', getErrorMessage(error));
   } finally {
@@ -458,14 +458,14 @@ async function recordVisit() {
 
 async function redeemReward() {
   if (!activeBusiness.value) {
-    setMessage(redeemMessage, 'error', 'Select a business first.');
+    setMessage(redeemMessage, 'error', t('messages.selectBusiness'));
     return;
   }
   redeemLoading.value = true;
   try {
     const data = await api.value.redeem(activeBusiness.value.id, redeem.phone);
     redeemResult.value = data;
-    setMessage(redeemMessage, 'success', 'Reward redeemed.');
+    setMessage(redeemMessage, 'success', t('messages.rewardRedeemed'));
   } catch (error) {
     setMessage(redeemMessage, 'error', getErrorMessage(error));
   } finally {
@@ -475,7 +475,7 @@ async function redeemReward() {
 
 async function fetchCustomer() {
   if (!activeBusiness.value) {
-    setMessage(lookupMessage, 'error', 'Select a business first.');
+    setMessage(lookupMessage, 'error', t('messages.selectBusiness'));
     return;
   }
   lookupLoading.value = true;
@@ -483,7 +483,7 @@ async function fetchCustomer() {
     const data = await api.value.getCustomerStatus(activeBusiness.value.id, lookup.phone);
     lookupResult.value = data;
     profile.phone = lookup.phone;
-    setMessage(lookupMessage, 'success', 'Customer loaded.');
+    setMessage(lookupMessage, 'success', t('messages.customerLoaded'));
   } catch (error) {
     setMessage(lookupMessage, 'error', getErrorMessage(error));
   } finally {
@@ -493,14 +493,14 @@ async function fetchCustomer() {
 
 async function fetchHistory() {
   if (!activeBusiness.value) {
-    setMessage(lookupMessage, 'error', 'Select a business first.');
+    setMessage(lookupMessage, 'error', t('messages.selectBusiness'));
     return;
   }
   historyLoading.value = true;
   try {
     const data = await api.value.getVisitHistory(activeBusiness.value.id, lookup.phone);
     visitHistory.value = data || [];
-    setMessage(lookupMessage, 'success', 'Visit history loaded.');
+    setMessage(lookupMessage, 'success', t('messages.historyLoaded'));
   } catch (error) {
     setMessage(lookupMessage, 'error', getErrorMessage(error));
   } finally {
@@ -510,14 +510,14 @@ async function fetchHistory() {
 
 async function fetchStampHistory() {
   if (!activeBusiness.value) {
-    setMessage(lookupMessage, 'error', 'Select a business first.');
+    setMessage(lookupMessage, 'error', t('messages.selectBusiness'));
     return;
   }
   stampHistoryLoading.value = true;
   try {
     const data = await api.value.getStampHistory(activeBusiness.value.id, lookup.phone);
     stampHistory.value = data || [];
-    setMessage(lookupMessage, 'success', 'Stamp history loaded.');
+    setMessage(lookupMessage, 'success', t('messages.stampHistoryLoaded'));
   } catch (error) {
     setMessage(lookupMessage, 'error', getErrorMessage(error));
   } finally {
@@ -527,7 +527,7 @@ async function fetchStampHistory() {
 
 async function updateProfile() {
   if (!activeBusiness.value) {
-    setMessage(profileMessage, 'error', 'Select a business first.');
+    setMessage(profileMessage, 'error', t('messages.selectBusiness'));
     return;
   }
   profileLoading.value = true;
@@ -538,7 +538,7 @@ async function updateProfile() {
       usualOrder: profile.usualOrder,
       notes: profile.notes
     });
-    setMessage(profileMessage, 'success', 'Profile updated.');
+    setMessage(profileMessage, 'success', t('messages.profileUpdated'));
   } catch (error) {
     setMessage(profileMessage, 'error', getErrorMessage(error));
   } finally {
@@ -548,7 +548,7 @@ async function updateProfile() {
 
 async function addStaff() {
   if (!activeBusiness.value) {
-    setMessage(staffMessage, 'error', 'Select a business first.');
+    setMessage(staffMessage, 'error', t('messages.selectBusiness'));
     return;
   }
   staffLoading.value = true;
@@ -559,7 +559,7 @@ async function addStaff() {
     });
     staff.displayName = '';
     staff.phoneNumber = '';
-    setMessage(staffMessage, 'success', 'Staff added.');
+    setMessage(staffMessage, 'success', t('messages.staffAdded'));
     await loadStaff();
   } catch (error) {
     setMessage(staffMessage, 'error', getErrorMessage(error));
@@ -570,13 +570,13 @@ async function addStaff() {
 
 async function loadStaff() {
   if (!activeBusiness.value) {
-    setMessage(staffMessage, 'error', 'Select a business first.');
+    setMessage(staffMessage, 'error', t('messages.selectBusiness'));
     return;
   }
   staffLoading.value = true;
   try {
     staffList.value = await api.value.getStaff(activeBusiness.value.id);
-    setMessage(staffMessage, 'success', 'Staff list refreshed.');
+    setMessage(staffMessage, 'success', t('messages.staffRefreshed'));
   } catch (error) {
     setMessage(staffMessage, 'error', getErrorMessage(error));
   } finally {
@@ -586,13 +586,13 @@ async function loadStaff() {
 
 async function loadRedemptions() {
   if (!activeBusiness.value) {
-    setMessage(redemptionsMessage, 'error', 'Select a business first.');
+    setMessage(redemptionsMessage, 'error', t('messages.selectBusiness'));
     return;
   }
   redemptionsLoading.value = true;
   try {
     redemptions.value = await api.value.getRedemptions(activeBusiness.value.id);
-    setMessage(redemptionsMessage, 'success', 'Redemptions loaded.');
+    setMessage(redemptionsMessage, 'success', t('messages.redemptionsLoaded'));
   } catch (error) {
     setMessage(redemptionsMessage, 'error', getErrorMessage(error));
   } finally {
@@ -602,7 +602,7 @@ async function loadRedemptions() {
 
 async function loadLoyaltyConfig() {
   if (!activeBusiness.value) {
-    setMessage(loyaltyMessage, 'error', 'Select a business first.');
+    setMessage(loyaltyMessage, 'error', t('messages.selectBusiness'));
     return;
   }
   loyaltyLoading.value = true;
@@ -616,7 +616,7 @@ async function loadLoyaltyConfig() {
     loyaltyConfig.visitThreshold = data.visitThreshold || 1;
     loyaltyConfig.optionalNote = data.optionalNote || '';
     loyaltyConfig.stampExpirationDays = data.stampExpirationDays ?? '';
-    setMessage(loyaltyMessage, 'success', 'Loyalty config loaded.');
+    setMessage(loyaltyMessage, 'success', t('messages.configLoaded'));
   } catch (error) {
     setMessage(loyaltyMessage, 'error', getErrorMessage(error));
   } finally {
@@ -626,11 +626,11 @@ async function loadLoyaltyConfig() {
 
 async function saveLoyaltyConfig() {
   if (!activeBusiness.value) {
-    setMessage(loyaltyMessage, 'error', 'Select a business first.');
+    setMessage(loyaltyMessage, 'error', t('messages.selectBusiness'));
     return;
   }
   if (!loyaltyConfig.programName.trim()) {
-    setMessage(loyaltyMessage, 'error', 'Program name is required.');
+    setMessage(loyaltyMessage, 'error', t('messages.programNameRequired'));
     return;
   }
   loyaltyLoading.value = true;
@@ -643,7 +643,7 @@ async function saveLoyaltyConfig() {
       optionalNote: loyaltyConfig.optionalNote,
       stampExpirationDays: loyaltyConfig.stampExpirationDays || null
     });
-    setMessage(loyaltyMessage, 'success', 'Loyalty config updated.');
+    setMessage(loyaltyMessage, 'success', t('messages.configUpdated'));
   } catch (error) {
     setMessage(loyaltyMessage, 'error', getErrorMessage(error));
   } finally {
@@ -653,19 +653,19 @@ async function saveLoyaltyConfig() {
 
 async function issueStamps() {
   if (!activeBusiness.value) {
-    setMessage(stampIssueMessage, 'error', 'Select a business first.');
+    setMessage(stampIssueMessage, 'error', t('messages.selectBusiness'));
     return;
   }
   if (!stampIssue.phone.trim()) {
-    setMessage(stampIssueMessage, 'error', 'Customer phone is required.');
+    setMessage(stampIssueMessage, 'error', t('messages.customerPhoneRequired'));
     return;
   }
   if (!stampIssue.reason.trim()) {
-    setMessage(stampIssueMessage, 'error', 'Reason is required.');
+    setMessage(stampIssueMessage, 'error', t('messages.reasonRequired'));
     return;
   }
   if (!stampIssue.quantity || stampIssue.quantity <= 0) {
-    setMessage(stampIssueMessage, 'error', 'Stamp quantity must be positive.');
+    setMessage(stampIssueMessage, 'error', t('messages.quantityPositive'));
     return;
   }
   stampIssueLoading.value = true;
@@ -676,7 +676,7 @@ async function issueStamps() {
       reason: stampIssue.reason
     });
     stampIssueResult.value = data;
-    setMessage(stampIssueMessage, 'success', 'Stamps issued.');
+    setMessage(stampIssueMessage, 'success', t('messages.stampsIssued'));
   } catch (error) {
     setMessage(stampIssueMessage, 'error', getErrorMessage(error));
   } finally {
@@ -686,17 +686,17 @@ async function issueStamps() {
 
 async function createMembership() {
   if (!activeBusiness.value) {
-    setMessage(membershipMessage, 'error', 'Select a business first.');
+    setMessage(membershipMessage, 'error', t('messages.selectBusiness'));
     return;
   }
   if (!membership.phone.trim()) {
-    setMessage(membershipMessage, 'error', 'Customer phone is required.');
+    setMessage(membershipMessage, 'error', t('messages.customerPhoneRequired'));
     return;
   }
   membershipLoading.value = true;
   try {
     await api.value.createMembership(activeBusiness.value.id, membership.phone);
-    setMessage(membershipMessage, 'success', 'Membership created.');
+    setMessage(membershipMessage, 'success', t('messages.membershipCreated'));
   } catch (error) {
     setMessage(membershipMessage, 'error', getErrorMessage(error));
   } finally {
@@ -706,13 +706,13 @@ async function createMembership() {
 
 async function loadStats() {
   if (!activeBusiness.value) {
-    setMessage(statsMessage, 'error', 'Select a business first.');
+    setMessage(statsMessage, 'error', t('messages.selectBusiness'));
     return;
   }
   statsLoading.value = true;
   try {
     stats.value = await api.value.getStats(activeBusiness.value.id);
-    setMessage(statsMessage, 'success', 'Stats loaded.');
+    setMessage(statsMessage, 'success', t('messages.statsLoaded'));
   } catch (error) {
     setMessage(statsMessage, 'error', getErrorMessage(error));
   } finally {
@@ -732,11 +732,11 @@ function onRewardImageChange(event: Event) {
 
 async function uploadProgramIcon() {
   if (!activeBusiness.value) {
-    setMessage(loyaltyMessage, 'error', 'Select a business first.');
+    setMessage(loyaltyMessage, 'error', t('messages.selectBusiness'));
     return;
   }
   if (!media.programIconFile) {
-    setMessage(loyaltyMessage, 'error', 'Select an image first.');
+    setMessage(loyaltyMessage, 'error', t('messages.imageRequired'));
     return;
   }
   loyaltyLoading.value = true;
@@ -756,11 +756,11 @@ async function uploadProgramIcon() {
 
 async function uploadRewardImage() {
   if (!activeBusiness.value) {
-    setMessage(loyaltyMessage, 'error', 'Select a business first.');
+    setMessage(loyaltyMessage, 'error', t('messages.selectBusiness'));
     return;
   }
   if (!media.rewardImageFile) {
-    setMessage(loyaltyMessage, 'error', 'Select an image first.');
+    setMessage(loyaltyMessage, 'error', t('messages.imageRequired'));
     return;
   }
   loyaltyLoading.value = true;

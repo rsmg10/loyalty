@@ -9,6 +9,7 @@ This file is the source-of-truth plan/status tracker for mobile/PWA work. Keep i
 - [x] OTP login + token storage
 - [x] Loyalty status screen (business + reward + progress)
 - [x] Visit history list (optional)
+- [x] Localization (English/Arabic + RTL support)
 - [ ] Magic link entry (optional future)
 - [ ] Show program name/description + stamp expiration info
 - [ ] Stamp transaction history (optional detailed audit)
@@ -26,6 +27,7 @@ This file is the source-of-truth plan/status tracker for mobile/PWA work. Keep i
 - Stack: Vue 3 + Vite + TypeScript + Tailwind CSS + Pinia.
 - Configure `VITE_API_BASE_URL` to point at the backend (defaults to `http://localhost:5000`).
 - Use OTP login to get a session token; send `Authorization: Bearer <token>` on all API requests.
+- The app sends `Accept-Language: en|ar` (or `?lang=`) so backend responses match the selected language.
 - Use `purpose` value `customer` in OTP requests.
 - The app is read-only: show loyalty status and visit history only.
 - Status data comes from the loyalty cycle snapshot, so the reward text stays consistent even if the business updates its config.

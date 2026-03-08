@@ -16,7 +16,7 @@ public sealed class OtpService
         _messagingService = messagingService;
     }
 
-    public async Task RequestOtpAsync(string phoneNumber, string purpose)
+    public async Task RequestOtpAsync(string phoneNumber, string purpose, string? language = null)
     {
         var code = GenerateCode();
         var otp = new AuthOtp
@@ -29,7 +29,7 @@ public sealed class OtpService
 
         _db.AuthOtps.Add(otp);
         await _db.SaveChangesAsync();
-        await _messagingService.SendOtpAsync(phoneNumber, code, purpose);
+        await _messagingService.SendOtpAsync(phoneNumber, code, purpose, language);
     }
 
     public async Task<AuthSession?> VerifyOtpAsync(string phoneNumber, string code, string purpose)

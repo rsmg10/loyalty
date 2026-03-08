@@ -1,25 +1,25 @@
 <template>
   <div class="glass-card animate-rise">
     <div class="flex items-center justify-between">
-      <h2 class="section-title">Redemption</h2>
-      <span class="chip">Counter</span>
+      <h2 class="section-title">{{ $t('cards.redemption') }}</h2>
+      <span class="chip">{{ $t('cards.counter') }}</span>
     </div>
-    <p class="mt-2 text-sm text-dusk/70">Redeem a reward once the customer has reached the threshold.</p>
+    <p class="mt-2 text-sm text-dusk/70">{{ $t('cards.redeemDescription') }}</p>
     <div class="mt-4 space-y-3">
       <input
         class="input"
-        placeholder="Customer phone"
+        :placeholder="$t('forms.customerPhone')"
         :value="phone"
         @input="$emit('update:phone', ($event.target as HTMLInputElement).value)"
       />
       <button class="btn-primary w-full" :disabled="loading" @click="$emit('redeem')">
-        {{ loading ? 'Redeeming...' : 'Redeem reward' }}
+        {{ loading ? $t('cards.redeeming') : $t('cards.redeemReward') }}
       </button>
       <div v-if="result" class="rounded-xl bg-sand/70 p-3 text-sm">
-        <p class="font-semibold">Reward redeemed</p>
+        <p class="font-semibold">{{ $t('cards.rewardRedeemed') }}</p>
         <p class="text-dusk/70">{{ result.rewardName }}</p>
         <p v-if="result.redeemedByPhone" class="text-dusk/70">
-          Redeemed by: {{ result.redeemedByPhone }}
+          {{ $t('cards.redeemedBy') }}: {{ result.redeemedByPhone }}
         </p>
       </div>
       <p v-if="message" :class="messageClass(message.tone)">

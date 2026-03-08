@@ -8,8 +8,8 @@
             {{ subtitle }}
           </p>
         </div>
-        <span class="chip group-open:hidden">Expand</span>
-        <span class="chip hidden group-open:inline-flex">Collapse</span>
+        <span class="chip group-open:hidden">{{ $t('nav.expand') }}</span>
+        <span class="chip hidden group-open:inline-flex">{{ $t('nav.collapse') }}</span>
       </summary>
       <div class="mt-4 grid gap-6 lg:grid-cols-2">
         <slot />

@@ -17,6 +17,7 @@ This file is the source-of-truth plan/status tracker for web work. Keep it updat
 - [x] Redemptions list (owner)
 - [x] Loyalty config update (owner)
 - [x] Router + screen split (login/onboarding/app)
+- [x] Localization (English/Arabic + RTL support)
 - [ ] Stamp issuance flow (quantity + reason) using `/stamps`
 - [ ] Membership join action (explicit create via `/memberships`)
 - [ ] Stamp transaction history view (audit)
@@ -46,6 +47,7 @@ This file is the source-of-truth plan/status tracker for web work. Keep it updat
 - Vue Router splits `/login`, `/onboarding`, and `/app` flows.
 - Configure `VITE_API_BASE_URL` to point at the backend (defaults to `http://localhost:5000`).
 - Auth is required for all API calls except OTP endpoints. Store the token from `/auth/verify-otp` and send `Authorization: Bearer <token>`.
+- The UI sends `Accept-Language: en|ar` (or `?lang=`) so backend error and SMS responses match the selected language.
 - Use `purpose` values like `owner` and `staff` in OTP requests to tag sessions.
 - Owners can onboard businesses, manage staff, and view redemptions. Staff can record visits, redeem rewards, and edit customer profiles.
 - Visit cooldown is enforced server-side; the visit response always returns the current progress/reward status even when a visit is ignored.

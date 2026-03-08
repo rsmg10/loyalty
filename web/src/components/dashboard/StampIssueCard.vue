@@ -1,14 +1,14 @@
 <template>
   <div class="glass-card animate-rise">
     <div class="flex items-center justify-between">
-      <h2 class="section-title">Stamp issuance</h2>
-      <span class="chip">Audit</span>
+      <h2 class="section-title">{{ $t('cards.stampIssuance') }}</h2>
+      <span class="chip">{{ $t('cards.audit') }}</span>
     </div>
-    <p class="mt-2 text-sm text-dusk/70">Issue one or more stamps with a required reason.</p>
+    <p class="mt-2 text-sm text-dusk/70">{{ $t('cards.issueDescription') }}</p>
     <div class="mt-4 space-y-3">
       <input
         class="input"
-        placeholder="Customer phone"
+        :placeholder="$t('forms.customerPhone')"
         :value="phone"
         @input="$emit('update:phone', ($event.target as HTMLInputElement).value)"
       />
@@ -16,25 +16,27 @@
         class="input"
         type="number"
         min="1"
-        placeholder="Quantity"
+        :placeholder="$t('forms.quantity')"
         :value="quantity"
         @input="$emit('update:quantity', Number(($event.target as HTMLInputElement).value))"
       />
       <input
         class="input"
-        placeholder="Reason (purchase, adjustment)"
+        :placeholder="$t('forms.reason')"
         :value="reason"
         @input="$emit('update:reason', ($event.target as HTMLInputElement).value)"
       />
       <button class="btn-primary w-full" :disabled="loading" @click="$emit('issue')">
-        {{ loading ? 'Issuing...' : 'Issue stamps' }}
+        {{ loading ? $t('cards.issuing') : $t('cards.issueStamps') }}
       </button>
       <div v-if="result" class="rounded-xl bg-sand/70 p-3 text-sm">
-        <p class="font-semibold">{{ result.rewardAvailable ? 'Reward available' : 'Stamps issued' }}</p>
-        <p class="text-dusk/70">
-          {{ result.stampCount }} / {{ result.stampThreshold }} stamps
+        <p class="font-semibold">
+          {{ result.rewardAvailable ? $t('cards.rewardAvailable') : $t('messages.stampsIssued') }}
         </p>
-        <p class="text-dusk/70">Reward: {{ result.rewardDescription }}</p>
+        <p class="text-dusk/70">
+          {{ result.stampCount }} / {{ result.stampThreshold }} {{ $t('cards.stamps') }}
+        </p>
+        <p class="text-dusk/70">{{ $t('cards.reward') }}: {{ result.rewardDescription }}</p>
       </div>
       <p v-if="message" :class="messageClass(message.tone)">
         {{ message.text }}

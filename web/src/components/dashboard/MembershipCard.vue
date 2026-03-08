@@ -1,21 +1,19 @@
 <template>
   <div class="glass-card animate-rise">
     <div class="flex items-center justify-between">
-      <h2 class="section-title">Membership join</h2>
-      <span class="chip">Enroll</span>
+      <h2 class="section-title">{{ $t('cards.membershipJoin') }}</h2>
+      <span class="chip">{{ $t('cards.enroll') }}</span>
     </div>
-    <p class="mt-2 text-sm text-dusk/70">
-      Create a loyalty membership for a customer without issuing stamps.
-    </p>
+    <p class="mt-2 text-sm text-dusk/70">{{ $t('cards.membershipDescription') }}</p>
     <div class="mt-4 space-y-3">
       <input
         class="input"
-        placeholder="Customer phone"
+        :placeholder="$t('forms.customerPhone')"
         :value="phone"
         @input="$emit('update:phone', ($event.target as HTMLInputElement).value)"
       />
       <button class="btn-primary w-full" :disabled="loading" @click="$emit('create')">
-        {{ loading ? 'Creating...' : 'Create membership' }}
+        {{ loading ? $t('cards.creating') : $t('cards.createMembership') }}
       </button>
       <p v-if="message" :class="messageClass(message.tone)">
         {{ message.text }}

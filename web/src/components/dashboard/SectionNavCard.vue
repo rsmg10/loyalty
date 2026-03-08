@@ -3,11 +3,11 @@
     <details open class="group">
       <summary class="flex cursor-pointer list-none items-center justify-between gap-4">
         <div>
-          <h2 class="section-title">Workspace</h2>
-          <p class="mt-1 text-sm text-dusk/70">Jump to a section</p>
+          <h2 class="section-title">{{ $t('dashboard.business') }}</h2>
+          <p class="mt-1 text-sm text-dusk/70">{{ $t('nav.jumpTo') }}</p>
         </div>
-        <span class="chip group-open:hidden">Expand</span>
-        <span class="chip hidden group-open:inline-flex">Collapse</span>
+        <span class="chip group-open:hidden">{{ $t('nav.expand') }}</span>
+        <span class="chip hidden group-open:inline-flex">{{ $t('nav.collapse') }}</span>
       </summary>
       <div class="mt-4 space-y-2">
         <button
@@ -15,14 +15,14 @@
           :class="activeSection === 'front-counter' ? 'border-ember/40 text-ember' : ''"
           @click="$emit('jump', 'front-counter')"
         >
-          Front counter
+          {{ $t('dashboard.frontCounter') }}
         </button>
         <button
           class="btn-ghost w-full"
           :class="activeSection === 'customer-care' ? 'border-ember/40 text-ember' : ''"
           @click="$emit('jump', 'customer-care')"
         >
-          Customer care
+          {{ $t('dashboard.customerCare') }}
         </button>
         <button
           v-if="isOwner"
@@ -30,7 +30,7 @@
           :class="activeSection === 'owner-tools' ? 'border-ember/40 text-ember' : ''"
           @click="$emit('jump', 'owner-tools')"
         >
-          Owner tools
+          {{ $t('dashboard.ownerTools') }}
         </button>
       </div>
     </details>

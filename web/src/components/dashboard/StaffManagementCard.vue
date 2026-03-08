@@ -1,28 +1,28 @@
 <template>
   <div class="glass-card animate-rise">
     <div class="flex items-center justify-between">
-      <h2 class="section-title">Staff management</h2>
-      <span class="chip">Owner</span>
+      <h2 class="section-title">{{ $t('cards.staffManagement') }}</h2>
+      <span class="chip">{{ $t('cards.owner') }}</span>
     </div>
-    <p class="mt-2 text-sm text-dusk/70">Add staff and keep phone numbers aligned.</p>
+    <p class="mt-2 text-sm text-dusk/70">{{ $t('cards.staffDescription') }}</p>
     <div class="mt-4 space-y-3">
       <input
         class="input"
-        placeholder="Staff name"
+        :placeholder="$t('forms.staffName')"
         :value="staff.displayName"
         @input="$emit('update:displayName', ($event.target as HTMLInputElement).value)"
       />
       <input
         class="input"
-        placeholder="Staff phone"
+        :placeholder="$t('forms.staffPhone')"
         :value="staff.phoneNumber"
         @input="$emit('update:phoneNumber', ($event.target as HTMLInputElement).value)"
       />
       <button class="btn-primary w-full" :disabled="loading" @click="$emit('add')">
-        {{ loading ? 'Adding...' : 'Add staff' }}
+        {{ loading ? $t('cards.adding') : $t('cards.addStaff') }}
       </button>
       <button class="btn-ghost w-full" :disabled="loading" @click="$emit('refresh')">
-        Refresh staff list
+        {{ $t('cards.refreshStaff') }}
       </button>
       <ul v-if="staffList.length" class="space-y-2 text-xs text-dusk/70">
         <li v-for="member in staffList" :key="member.id">

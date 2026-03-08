@@ -1,12 +1,12 @@
 <template>
   <section class="glass-card animate-rise">
     <div class="flex items-center justify-between">
-      <h2 class="section-title">Quick actions</h2>
-      <span class="chip">Shortcuts</span>
+      <h2 class="section-title">{{ $t('nav.quickActions') }}</h2>
+      <span class="chip">{{ $t('dashboard.shortcuts') }}</span>
     </div>
     <div class="mt-4 space-y-2">
       <button class="btn-ghost w-full" @click="$emit('load-staff')" :disabled="staffLoading">
-        Load staff
+        {{ $t('dashboard.loadStaff') }}
       </button>
       <button
         v-if="isOwner"
@@ -14,7 +14,7 @@
         @click="$emit('load-redemptions')"
         :disabled="redemptionsLoading"
       >
-        Load redemptions
+        {{ $t('dashboard.loadRedemptions') }}
       </button>
     </div>
   </section>

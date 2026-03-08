@@ -1,17 +1,17 @@
 <template>
   <section class="card animate-floatUp">
     <div class="flex items-center justify-between">
-      <h2 class="font-display text-xl text-dusk">OTP access</h2>
-      <span class="badge">Login</span>
+      <h2 class="font-display text-xl text-dusk">{{ $t('auth.otpAccess') }}</h2>
+      <span class="badge">{{ $t('auth.login') }}</span>
     </div>
     <div class="mt-4 space-y-3">
-      <input v-model="auth.phone" class="input" placeholder="Your phone" />
+      <input v-model="auth.phone" class="input" :placeholder="$t('auth.phone')" />
       <button class="btn-ghost" :disabled="authLoading" @click="requestOtp">
-        {{ authLoading ? 'Sending...' : 'Request OTP' }}
+        {{ authLoading ? $t('auth.sending') : $t('auth.requestOtp') }}
       </button>
-      <input v-model="auth.code" class="input" placeholder="6-digit code" />
+      <input v-model="auth.code" class="input" :placeholder="$t('auth.code')" />
       <button class="btn-primary" :disabled="authLoading" @click="verifyOtp">
-        {{ authLoading ? 'Verifying...' : 'Verify & Continue' }}
+        {{ authLoading ? $t('auth.verifying') : $t('auth.verify') }}
       </button>
       <p v-if="authMessage" :class="messageClass(authMessage.tone)">
         {{ authMessage.text }}
@@ -26,6 +26,7 @@ import { useRouter } from 'vue-router';
 import { getErrorMessage } from '../lib/errors';
 import { useCustomerApi } from '../composables/useCustomerApi';
 import { useSessionStore } from '../stores/session';
+import { useI18n } from 'vue-i18n';
 
 type MessageTone = 'success' | 'error' | 'info';
 type Message = { tone: MessageTone; text: string };
@@ -33,6 +34,7 @@ type Message = { tone: MessageTone; text: string };
 const session = useSessionStore();
 const router = useRouter();
 const customerApi = useCustomerApi(session.token);
+const { t } = useI18n();
 
 const auth = reactive({
   phone: session.phoneNumber || '',
@@ -61,7 +63,7 @@ async function requestOtp() {
   authLoading.value = true;
   try {
     await customerApi.requestOtp(auth.phone);
-    setMessage(authMessage, 'success', 'OTP sent.');
+    setMessage(authMessage, 'success', t('auth.otpSent'));
   } catch (error) {
     setMessage(authMessage, 'error', getErrorMessage(error));
   } finally {
@@ -74,7 +76,7 @@ async function verifyOtp() {
   try {
     const data = await customerApi.verifyOtp({ phoneNumber: auth.phone, code: auth.code });
     session.setAuth(data.token, auth.phone);
-    setMessage(authMessage, 'success', 'Signed in.');
+    setMessage(authMessage, 'success', t('auth.signedIn'));
     router.push({ name: 'wallet' });
   } catch (error) {
     setMessage(authMessage, 'error', getErrorMessage(error));

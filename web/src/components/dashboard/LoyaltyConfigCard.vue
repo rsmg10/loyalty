@@ -1,28 +1,30 @@
 <template>
   <div class="glass-card animate-rise">
     <div class="flex items-center justify-between">
-      <h2 class="section-title">Loyalty config</h2>
-      <span class="chip">Owner</span>
+      <h2 class="section-title">{{ $t('cards.loyaltyConfig') }}</h2>
+      <span class="chip">{{ $t('cards.owner') }}</span>
     </div>
-    <p class="mt-2 text-sm text-dusk/70">Update the active reward for new cycles.</p>
+    <p class="mt-2 text-sm text-dusk/70">{{ $t('cards.configDescription') }}</p>
     <div class="mt-4 space-y-3">
       <input
         class="input"
-        placeholder="Program name"
+        :placeholder="$t('onboarding.programName')"
         :value="config.programName"
         @input="$emit('update:programName', ($event.target as HTMLInputElement).value)"
       />
       <textarea
         class="textarea"
-        placeholder="Program description"
+        :placeholder="$t('onboarding.programDescription')"
         :value="config.programDescription"
         @input="$emit('update:programDescription', ($event.target as HTMLTextAreaElement).value)"
       ></textarea>
       <div class="space-y-2">
-        <label class="text-xs font-semibold uppercase tracking-wide text-dusk/70">Program icon</label>
+        <label class="text-xs font-semibold uppercase tracking-wide text-dusk/70">
+          {{ $t('cards.programIcon') }}
+        </label>
         <input class="input" type="file" accept="image/*" @change="$emit('program-icon-change', $event)" />
         <button class="btn-ghost w-full" :disabled="loading" @click="$emit('upload-program-icon')">
-          Upload program icon
+          {{ $t('cards.uploadProgramIcon') }}
         </button>
         <img
           v-if="config.programIconUrl"
@@ -33,7 +35,7 @@
       </div>
       <input
         class="input"
-        placeholder="Reward name"
+        :placeholder="$t('onboarding.rewardName')"
         :value="config.rewardName"
         @input="$emit('update:rewardName', ($event.target as HTMLInputElement).value)"
       />
@@ -45,10 +47,12 @@
         @input="$emit('update:visitThreshold', Number(($event.target as HTMLInputElement).value))"
       />
       <div class="space-y-2">
-        <label class="text-xs font-semibold uppercase tracking-wide text-dusk/70">Reward image</label>
+        <label class="text-xs font-semibold uppercase tracking-wide text-dusk/70">
+          {{ $t('cards.rewardImage') }}
+        </label>
         <input class="input" type="file" accept="image/*" @change="$emit('reward-image-change', $event)" />
         <button class="btn-ghost w-full" :disabled="loading" @click="$emit('upload-reward-image')">
-          Upload reward image
+          {{ $t('cards.uploadRewardImage') }}
         </button>
         <img
           v-if="config.rewardImageUrl"
@@ -59,7 +63,7 @@
       </div>
       <textarea
         class="textarea"
-        placeholder="Optional note"
+        :placeholder="$t('onboarding.optionalNote')"
         :value="config.optionalNote"
         @input="$emit('update:optionalNote', ($event.target as HTMLTextAreaElement).value)"
       ></textarea>
@@ -67,16 +71,16 @@
         class="input"
         type="number"
         min="1"
-        placeholder="Stamp expiration days (optional)"
+        :placeholder="$t('onboarding.stampExpiration')"
         :value="config.stampExpirationDays"
         @input="$emit('update:stampExpirationDays', ($event.target as HTMLInputElement).value)"
       />
       <div class="flex flex-col gap-2 sm:flex-row">
         <button class="btn-primary w-full" :disabled="loading" @click="$emit('save')">
-          {{ loading ? 'Saving...' : 'Save config' }}
+          {{ loading ? $t('cards.saving') : $t('cards.saveConfig') }}
         </button>
         <button class="btn-ghost w-full" :disabled="loading" @click="$emit('refresh')">
-          Refresh config
+          {{ $t('cards.refreshConfig') }}
         </button>
       </div>
       <p v-if="message" :class="messageClass(message.tone)">

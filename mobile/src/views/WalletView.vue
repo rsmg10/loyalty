@@ -2,25 +2,25 @@
   <section class="space-y-6">
     <div class="card animate-floatUp">
       <div class="flex items-center justify-between">
-        <h2 class="font-display text-xl text-dusk">Your status</h2>
+        <h2 class="font-display text-xl text-dusk">{{ $t('wallet.statusTitle') }}</h2>
         <button class="text-xs font-semibold uppercase tracking-wider text-coral" @click="logout">
-          Sign out
+          {{ $t('app.signOut') }}
         </button>
       </div>
       <div class="mt-4 space-y-3">
-        <input v-model="status.businessId" class="input" placeholder="Business ID" />
+        <input v-model="status.businessId" class="input" :placeholder="$t('forms.businessId')" />
         <input
           v-model="status.phone"
           class="input"
-          placeholder="Customer phone"
+          :placeholder="$t('forms.customerPhone')"
           :readonly="Boolean(session.phoneNumber)"
         />
         <button class="btn-primary" :disabled="statusLoading" @click="loadStatus">
-          {{ statusLoading ? 'Loading...' : 'Load status' }}
+          {{ statusLoading ? $t('wallet.loading') : $t('wallet.loadStatus') }}
         </button>
         <div v-if="statusResult" class="rounded-xl bg-cream/70 p-4 text-sm text-dusk">
           <p class="font-semibold">{{ statusResult.businessName }}</p>
-          <p class="text-dusk/70">Program: {{ statusResult.programName }}</p>
+          <p class="text-dusk/70">{{ $t('wallet.program') }}: {{ statusResult.programName }}</p>
           <p v-if="statusResult.programDescription" class="text-dusk/70">
             {{ statusResult.programDescription }}
           </p>
@@ -30,7 +30,7 @@
             alt="Program icon"
             class="mt-2 h-16 w-16 rounded-2xl object-cover"
           />
-          <p class="text-dusk/70">Reward: {{ statusResult.rewardName }}</p>
+          <p class="text-dusk/70">{{ $t('wallet.reward') }}: {{ statusResult.rewardName }}</p>
           <img
             v-if="statusResult.rewardImageUrl"
             :src="statusResult.rewardImageUrl"
@@ -38,19 +38,19 @@
             class="mt-2 h-28 w-full rounded-2xl object-cover"
           />
           <p class="text-dusk/70">
-            Progress: {{ statusResult.visitCount }} / {{ statusResult.visitThreshold }} stamps
+            {{ $t('wallet.progress') }}: {{ statusResult.visitCount }} / {{ statusResult.visitThreshold }}
           </p>
           <p v-if="statusResult.optionalNote" class="text-dusk/70">
-            Note: {{ statusResult.optionalNote }}
+            {{ $t('wallet.note') }}: {{ statusResult.optionalNote }}
           </p>
           <p v-if="statusResult.stampExpirationDays" class="text-dusk/70">
-            Stamp expiration: {{ statusResult.stampExpirationDays }} days
+            {{ $t('wallet.stampExpiration') }}: {{ statusResult.stampExpirationDays }}
           </p>
           <p v-if="statusResult.lastStampAt" class="text-dusk/70">
-            Last stamp: {{ new Date(statusResult.lastStampAt).toLocaleString() }}
+            {{ $t('wallet.lastStamp') }}: {{ new Date(statusResult.lastStampAt).toLocaleString() }}
           </p>
           <p v-if="statusResult.rewardAvailableAt" class="text-dusk/70">
-            Reward available since: {{ new Date(statusResult.rewardAvailableAt).toLocaleString() }}
+            {{ $t('wallet.rewardAvailableSince') }}: {{ new Date(statusResult.rewardAvailableAt).toLocaleString() }}
           </p>
         </div>
         <p v-if="statusMessage" :class="messageClass(statusMessage.tone)">
@@ -61,12 +61,12 @@
 
     <div class="card animate-floatUp">
       <div class="flex items-center justify-between">
-        <h2 class="font-display text-xl text-dusk">Visit history</h2>
-        <span class="badge">Optional</span>
+        <h2 class="font-display text-xl text-dusk">{{ $t('wallet.visitHistory') }}</h2>
+        <span class="badge">{{ $t('wallet.optional') }}</span>
       </div>
       <div class="mt-4 space-y-3">
         <button class="btn-ghost" :disabled="historyLoading" @click="loadHistory">
-          {{ historyLoading ? 'Loading...' : 'Load history' }}
+          {{ historyLoading ? $t('wallet.loading') : $t('wallet.loadHistory') }}
         </button>
         <ul v-if="history.length" class="space-y-2 text-xs text-dusk/70">
           <li v-for="entry in history" :key="entry.createdAt">
@@ -82,12 +82,12 @@
 
     <div class="card animate-floatUp">
       <div class="flex items-center justify-between">
-        <h2 class="font-display text-xl text-dusk">Stamp audit</h2>
-        <span class="badge">Optional</span>
+        <h2 class="font-display text-xl text-dusk">{{ $t('wallet.stampAudit') }}</h2>
+        <span class="badge">{{ $t('wallet.optional') }}</span>
       </div>
       <div class="mt-4 space-y-3">
         <button class="btn-ghost" :disabled="stampHistoryLoading" @click="loadStampHistory">
-          {{ stampHistoryLoading ? 'Loading...' : 'Load stamp history' }}
+          {{ stampHistoryLoading ? $t('wallet.loading') : $t('wallet.loadStampHistory') }}
         </button>
         <ul v-if="stampHistory.length" class="space-y-2 text-xs text-dusk/70">
           <li v-for="entry in stampHistory" :key="entry.id">
@@ -102,10 +102,8 @@
     </div>
 
     <div class="card animate-floatUp">
-      <h2 class="font-display text-xl text-dusk">Share this</h2>
-      <p class="mt-3 text-sm text-dusk/70">
-        Ask staff for the business ID or scan the shop QR once we enable magic links.
-      </p>
+      <h2 class="font-display text-xl text-dusk">{{ $t('app.shareTitle') }}</h2>
+      <p class="mt-3 text-sm text-dusk/70">{{ $t('app.shareHint') }}</p>
     </div>
   </section>
 </template>
@@ -117,6 +115,7 @@ import { useCustomerApi } from '../composables/useCustomerApi';
 import type { CustomerStatusResponse, StampTransactionItem, VisitHistoryItem } from '../lib/types';
 import { usePreferencesStore } from '../stores/preferences';
 import { useSessionStore } from '../stores/session';
+import { useI18n } from 'vue-i18n';
 
 type MessageTone = 'success' | 'error' | 'info';
 type Message = { tone: MessageTone; text: string };
@@ -124,6 +123,7 @@ type Message = { tone: MessageTone; text: string };
 const session = useSessionStore();
 const preferences = usePreferencesStore();
 const customerApi = useCustomerApi(session.token);
+const { t } = useI18n();
 
 const status = reactive({
   businessId: preferences.businessId,
@@ -173,14 +173,14 @@ function setMessage(target: { value: Message | null }, tone: MessageTone, text: 
 
 async function loadStatus() {
   if (!status.businessId) {
-    setMessage(statusMessage, 'error', 'Enter a business ID.');
+    setMessage(statusMessage, 'error', t('messages.enterBusiness'));
     return;
   }
   statusLoading.value = true;
   try {
     const data = await customerApi.getStatus(status.businessId, status.phone);
     statusResult.value = data;
-    setMessage(statusMessage, 'success', 'Status loaded.');
+    setMessage(statusMessage, 'success', t('messages.statusLoaded'));
   } catch (error) {
     setMessage(statusMessage, 'error', getErrorMessage(error));
   } finally {
@@ -190,14 +190,14 @@ async function loadStatus() {
 
 async function loadHistory() {
   if (!status.businessId) {
-    setMessage(historyMessage, 'error', 'Enter a business ID.');
+    setMessage(historyMessage, 'error', t('messages.enterBusiness'));
     return;
   }
   historyLoading.value = true;
   try {
     const data = await customerApi.getVisitHistory(status.businessId, status.phone);
     history.value = data || [];
-    setMessage(historyMessage, 'success', 'History loaded.');
+    setMessage(historyMessage, 'success', t('messages.historyLoaded'));
   } catch (error) {
     setMessage(historyMessage, 'error', getErrorMessage(error));
   } finally {
@@ -207,14 +207,14 @@ async function loadHistory() {
 
 async function loadStampHistory() {
   if (!status.businessId) {
-    setMessage(stampHistoryMessage, 'error', 'Enter a business ID.');
+    setMessage(stampHistoryMessage, 'error', t('messages.enterBusiness'));
     return;
   }
   stampHistoryLoading.value = true;
   try {
     const data = await customerApi.getStampHistory(status.businessId, status.phone);
     stampHistory.value = data || [];
-    setMessage(stampHistoryMessage, 'success', 'Stamp history loaded.');
+    setMessage(stampHistoryMessage, 'success', t('messages.stampHistoryLoaded'));
   } catch (error) {
     setMessage(stampHistoryMessage, 'error', getErrorMessage(error));
   } finally {

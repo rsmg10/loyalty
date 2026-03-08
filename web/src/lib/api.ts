@@ -1,4 +1,13 @@
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+const LOCALE_STORAGE_KEY = 'loyalty_locale';
+
+function getPreferredLanguage(): string {
+  if (typeof localStorage === 'undefined') {
+    return 'en';
+  }
+
+  return localStorage.getItem(LOCALE_STORAGE_KEY) || 'en';
+}
 
 type RequestOptions = {
   method?: string;
@@ -21,7 +30,9 @@ async function parseResponse(response: Response): Promise<unknown> {
 
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const { method = 'GET', body, token } = options;
-  const headers = { Accept: 'application/json' };
+  const headers: Record<string, string> = { Accept: 'application/json' };
+
+  headers['Accept-Language'] = getPreferredLanguage();
 
   if (body) {
     headers['Content-Type'] = 'application/json';
@@ -62,6 +73,7 @@ export function apiPut<T>(path: string, body: unknown, token?: string): Promise<
 
 export async function apiPostForm<T>(path: string, formData: FormData, token?: string): Promise<T> {
   const headers: Record<string, string> = { Accept: 'application/json' };
+  headers['Accept-Language'] = getPreferredLanguage();
   if (token) {
     headers.Authorization = `Bearer ${token}`;
   }
