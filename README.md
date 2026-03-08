@@ -87,6 +87,6 @@ make migrate
 
 ## Next Steps
 
-- Implement authentication (OTP/JWT) and messaging integration.
-- Build staff/admin web UI for visit recording and redemption.
-- Build customer-facing PWA view for status lookup.
+- Add production SMS provider integration.
+- Add test coverage and CI.
+- Build reporting dashboards for vendors and platform admins.

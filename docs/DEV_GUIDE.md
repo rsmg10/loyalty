@@ -44,6 +44,25 @@ cp .env.example .env
 
 Defaults are already good for local development.
 
+## Magic Links (Customer QR)
+
+Magic links let staff generate a QR that opens the mobile app with the correct business.
+
+Config (defaults in `backend/Loyalty.Api/appsettings.json`):
+- `MagicLinks__CustomerAppBaseUrl` (default `http://localhost:5174`)
+- `MagicLinks__DefaultTtlDays` (default `180`)
+
+## Reporting + Admin Access
+
+Reporting is vendor-scoped by default. Platform admin access is granted by phone number:
+- `Reporting__AdminPhones` (comma-separated phone numbers)
+
+Suspicious activity thresholds:
+- `Reporting__SuspiciousWindowMinutes`
+- `Reporting__SuspiciousStaffStampThreshold`
+- `Reporting__SuspiciousCustomerRedemptionThreshold`
+- `Reporting__SuspiciousAdjustmentThreshold`
+
 ## Database Migrations
 
 Create a migration:
@@ -126,3 +145,4 @@ make migrate
 - The API uses PostgreSQL. SQLite is no longer used.
 - Dev profile is hot reload; prod profile is built artifacts.
 - Seed data is safe to re-run only on an empty DB.
+- Reporting endpoint notes and limitations are documented in `docs/REPORTING.md`.

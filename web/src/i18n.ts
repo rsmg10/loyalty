@@ -158,7 +158,14 @@ const messages = {
       statsDescription: 'Quick loyalty totals for this business.',
       enrolledCustomers: 'Enrolled customers',
       stampsIssued: 'Stamps issued',
-      rewardsRedeemed: 'Rewards redeemed'
+      rewardsRedeemed: 'Rewards redeemed',
+      magicLink: 'Magic link',
+      magicLinkDescription: 'Generate a QR link customers can scan to open this business in the wallet.',
+      generateMagicLink: 'Generate magic link',
+      generating: 'Generating...',
+      magicLinkReady: 'Magic link ready',
+      copyLink: 'Copy link',
+      magicLinkExpires: 'Expires'
     },
     forms: {
       customerPhone: 'Customer phone',
@@ -192,7 +199,11 @@ const messages = {
       customerPhoneRequired: 'Customer phone is required.',
       reasonRequired: 'Reason is required.',
       quantityPositive: 'Stamp quantity must be positive.',
-      imageRequired: 'Select an image first.'
+      imageRequired: 'Select an image first.',
+      magicLinkCreated: 'Magic link generated.',
+      magicLinkCopied: 'Magic link copied.',
+      programIconUploaded: 'Program icon uploaded.',
+      rewardImageUploaded: 'Reward image uploaded.'
     }
   },
   ar: {
@@ -349,7 +360,14 @@ const messages = {
       statsDescription: 'ملخص سريع للولاء.',
       enrolledCustomers: 'عدد العملاء',
       stampsIssued: 'عدد الأختام',
-      rewardsRedeemed: 'عدد الاستبدالات'
+      rewardsRedeemed: 'عدد الاستبدالات',
+      magicLink: 'رابط سريع',
+      magicLinkDescription: 'أنشئ رابطاً يمسحه العملاء لفتح هذا النشاط.',
+      generateMagicLink: 'إنشاء الرابط',
+      generating: 'جارٍ الإنشاء...',
+      magicLinkReady: 'الرابط جاهز',
+      copyLink: 'نسخ الرابط',
+      magicLinkExpires: 'ينتهي في'
     },
     forms: {
       customerPhone: 'هاتف العميل',
@@ -383,7 +401,11 @@ const messages = {
       customerPhoneRequired: 'هاتف العميل مطلوب.',
       reasonRequired: 'السبب مطلوب.',
       quantityPositive: 'الكمية يجب أن تكون موجبة.',
-      imageRequired: 'يرجى اختيار صورة.'
+      imageRequired: 'يرجى اختيار صورة.',
+      magicLinkCreated: 'تم إنشاء الرابط.',
+      magicLinkCopied: 'تم نسخ الرابط.',
+      programIconUploaded: 'تم رفع أيقونة البرنامج.',
+      rewardImageUploaded: 'تم رفع صورة المكافأة.'
     }
   }
 };

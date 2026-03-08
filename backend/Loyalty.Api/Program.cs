@@ -11,6 +11,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddScoped<IMessagingService, ConsoleMessagingService>();
 builder.Services.AddScoped<OtpService>();
 builder.Services.AddSingleton<LocalizationService>();
+builder.Services.AddScoped<ReportingService>();
+builder.Services.Configure<ReportingOptions>(builder.Configuration.GetSection("Reporting"));
 builder.Services.Configure<ObjectStorageOptions>(builder.Configuration.GetSection("ObjectStorage"));
 builder.Services.AddSingleton<IObjectStorage>(sp =>
 {
@@ -687,6 +689,88 @@ app.MapPost("/businesses/{businessId:int}/loyalty-media", async (
         var language = GetRequestLanguage(httpRequest, localizer);
         return Results.BadRequest(new { detail = localizer.Translate(ex.Message, language) });
     }
+});
+
+app.MapPost("/businesses/{businessId:int}/magic-links", async (
+    int businessId,
+    HttpRequest httpRequest,
+    AppDbContext db,
+    IConfiguration configuration,
+    LocalizationService localizer) =>
+{
+    var business = await db.Businesses.FirstOrDefaultAsync(b => b.Id == businessId);
+    if (business is null)
+    {
+        return NotFound(httpRequest, localizer, "Business not found");
+    }
+
+    var session = await GetAuthSessionAsync(httpRequest, db);
+    if (session is null)
+    {
+        return Results.Unauthorized();
+    }
+
+    if (!await HasBusinessAccessAsync(db, business, session.PhoneNumber))
+    {
+        return Results.Forbid();
+    }
+
+    var ttlDays = configuration.GetValue("MagicLinks:DefaultTtlDays", 180);
+    if (ttlDays <= 0)
+    {
+        ttlDays = 180;
+    }
+
+    var expiresAt = DateTime.UtcNow.AddDays(ttlDays);
+    var token = Guid.NewGuid().ToString("N");
+
+    var magicLink = new MagicLinkToken
+    {
+        BusinessId = businessId,
+        Token = token,
+        ExpiresAt = expiresAt,
+        CreatedByPhone = session.PhoneNumber
+    };
+
+    db.MagicLinkTokens.Add(magicLink);
+    await db.SaveChangesAsync();
+
+    var baseUrl = configuration.GetValue<string>("MagicLinks:CustomerAppBaseUrl") ?? "http://localhost:5174";
+    var url = $"{baseUrl.TrimEnd('/')}/magic?token={token}";
+
+    return Results.Ok(new MagicLinkResponse(token, url, expiresAt, businessId, business.Name));
+});
+
+app.MapGet("/magic-links/{token}", async (
+    string token,
+    HttpRequest httpRequest,
+    AppDbContext db,
+    LocalizationService localizer) =>
+{
+    if (string.IsNullOrWhiteSpace(token))
+    {
+        return NotFound(httpRequest, localizer, "Magic link not found or expired");
+    }
+
+    var trimmedToken = token.Trim();
+    var magicLink = await db.MagicLinkTokens
+        .FirstOrDefaultAsync(m => m.Token == trimmedToken);
+
+    if (magicLink is null || magicLink.ExpiresAt <= DateTime.UtcNow)
+    {
+        return NotFound(httpRequest, localizer, "Magic link not found or expired");
+    }
+
+    var business = await db.Businesses.FirstOrDefaultAsync(b => b.Id == magicLink.BusinessId);
+    if (business is null)
+    {
+        return NotFound(httpRequest, localizer, "Magic link not found or expired");
+    }
+
+    return Results.Ok(new MagicLinkResolveResponse(
+        magicLink.BusinessId,
+        business.Name,
+        magicLink.ExpiresAt));
 });
 
 app.MapPost("/businesses/{businessId:int}/redemptions", async (
@@ -1373,6 +1457,322 @@ app.MapGet("/businesses/{businessId:int}", async (
         business.LoyaltyConfig.StampExpirationDays));
 });
 
+app.MapGet("/businesses/{businessId:int}/reports/overview", async (
+    int businessId,
+    HttpRequest httpRequest,
+    AppDbContext db,
+    ReportingService reporting,
+    LocalizationService localizer) =>
+{
+    var access = await RequireBusinessAccessAsync(businessId, httpRequest, db, localizer);
+    if (access.Error is not null)
+    {
+        return access.Error;
+    }
+
+    if (!TryGetReportRange(httpRequest, localizer, out var range, out var rangeError))
+    {
+        return rangeError!;
+    }
+
+    return Results.Ok(await reporting.GetVendorOverviewAsync(businessId, range));
+});
+
+app.MapGet("/businesses/{businessId:int}/reports/customer-growth", async (
+    int businessId,
+    HttpRequest httpRequest,
+    AppDbContext db,
+    ReportingService reporting,
+    LocalizationService localizer) =>
+{
+    var access = await RequireBusinessAccessAsync(businessId, httpRequest, db, localizer);
+    if (access.Error is not null)
+    {
+        return access.Error;
+    }
+
+    if (!TryGetReportRange(httpRequest, localizer, out var range, out var rangeError))
+    {
+        return rangeError!;
+    }
+
+    return Results.Ok(await reporting.GetCustomerGrowthReportAsync(businessId, range));
+});
+
+app.MapGet("/businesses/{businessId:int}/reports/customer-activity", async (
+    int businessId,
+    HttpRequest httpRequest,
+    AppDbContext db,
+    ReportingService reporting,
+    LocalizationService localizer) =>
+{
+    var access = await RequireBusinessAccessAsync(businessId, httpRequest, db, localizer);
+    if (access.Error is not null)
+    {
+        return access.Error;
+    }
+
+    if (!TryGetReportRange(httpRequest, localizer, out var range, out var rangeError))
+    {
+        return rangeError!;
+    }
+
+    var status = httpRequest.Query["status"].ToString();
+    var sort = httpRequest.Query["sort"].ToString();
+    var (page, pageSize) = GetPaging(httpRequest);
+
+    return Results.Ok(await reporting.GetCustomerActivityReportAsync(businessId, range, page, pageSize, status, sort));
+});
+
+app.MapGet("/businesses/{businessId:int}/reports/stamp-issuance", async (
+    int businessId,
+    HttpRequest httpRequest,
+    AppDbContext db,
+    ReportingService reporting,
+    LocalizationService localizer) =>
+{
+    var access = await RequireBusinessAccessAsync(businessId, httpRequest, db, localizer);
+    if (access.Error is not null)
+    {
+        return access.Error;
+    }
+
+    if (!TryGetReportRange(httpRequest, localizer, out var range, out var rangeError))
+    {
+        return rangeError!;
+    }
+
+    var (page, pageSize) = GetPaging(httpRequest);
+    return Results.Ok(await reporting.GetStampIssuanceReportAsync(businessId, range, page, pageSize));
+});
+
+app.MapGet("/businesses/{businessId:int}/reports/redemptions", async (
+    int businessId,
+    HttpRequest httpRequest,
+    AppDbContext db,
+    ReportingService reporting,
+    LocalizationService localizer) =>
+{
+    var access = await RequireBusinessAccessAsync(businessId, httpRequest, db, localizer);
+    if (access.Error is not null)
+    {
+        return access.Error;
+    }
+
+    if (!TryGetReportRange(httpRequest, localizer, out var range, out var rangeError))
+    {
+        return rangeError!;
+    }
+
+    var (page, pageSize) = GetPaging(httpRequest);
+    return Results.Ok(await reporting.GetRewardRedemptionReportAsync(businessId, range, page, pageSize));
+});
+
+app.MapGet("/businesses/{businessId:int}/reports/program-performance", async (
+    int businessId,
+    HttpRequest httpRequest,
+    AppDbContext db,
+    ReportingService reporting,
+    LocalizationService localizer) =>
+{
+    var access = await RequireBusinessAccessAsync(businessId, httpRequest, db, localizer);
+    if (access.Error is not null)
+    {
+        return access.Error;
+    }
+
+    if (!TryGetReportRange(httpRequest, localizer, out var range, out var rangeError))
+    {
+        return rangeError!;
+    }
+
+    return Results.Ok(await reporting.GetProgramPerformanceReportAsync(businessId, range));
+});
+
+app.MapGet("/businesses/{businessId:int}/reports/progress-funnel", async (
+    int businessId,
+    HttpRequest httpRequest,
+    AppDbContext db,
+    ReportingService reporting,
+    LocalizationService localizer) =>
+{
+    var access = await RequireBusinessAccessAsync(businessId, httpRequest, db, localizer);
+    if (access.Error is not null)
+    {
+        return access.Error;
+    }
+
+    if (!TryGetReportRange(httpRequest, localizer, out var range, out var rangeError))
+    {
+        return rangeError!;
+    }
+
+    return Results.Ok(await reporting.GetProgressFunnelReportAsync(businessId, range));
+});
+
+app.MapGet("/businesses/{businessId:int}/reports/top-customers", async (
+    int businessId,
+    HttpRequest httpRequest,
+    AppDbContext db,
+    ReportingService reporting,
+    LocalizationService localizer) =>
+{
+    var access = await RequireBusinessAccessAsync(businessId, httpRequest, db, localizer);
+    if (access.Error is not null)
+    {
+        return access.Error;
+    }
+
+    if (!TryGetReportRange(httpRequest, localizer, out var range, out var rangeError))
+    {
+        return rangeError!;
+    }
+
+    var sort = httpRequest.Query["sort"].ToString();
+    var (page, pageSize) = GetPaging(httpRequest);
+    return Results.Ok(await reporting.GetTopCustomersReportAsync(businessId, range, page, pageSize, sort));
+});
+
+app.MapGet("/businesses/{businessId:int}/reports/retention", async (
+    int businessId,
+    HttpRequest httpRequest,
+    AppDbContext db,
+    ReportingService reporting,
+    LocalizationService localizer) =>
+{
+    var access = await RequireBusinessAccessAsync(businessId, httpRequest, db, localizer);
+    if (access.Error is not null)
+    {
+        return access.Error;
+    }
+
+    if (!TryGetReportRange(httpRequest, localizer, out var range, out var rangeError))
+    {
+        return rangeError!;
+    }
+
+    return Results.Ok(await reporting.GetRetentionReportAsync(businessId, range));
+});
+
+app.MapGet("/businesses/{businessId:int}/reports/time-activity", async (
+    int businessId,
+    HttpRequest httpRequest,
+    AppDbContext db,
+    ReportingService reporting,
+    LocalizationService localizer) =>
+{
+    var access = await RequireBusinessAccessAsync(businessId, httpRequest, db, localizer);
+    if (access.Error is not null)
+    {
+        return access.Error;
+    }
+
+    if (!TryGetReportRange(httpRequest, localizer, out var range, out var rangeError))
+    {
+        return rangeError!;
+    }
+
+    return Results.Ok(await reporting.GetTimeActivityReportAsync(businessId, range));
+});
+
+app.MapGet("/businesses/{businessId:int}/reports/staff-activity", async (
+    int businessId,
+    HttpRequest httpRequest,
+    AppDbContext db,
+    ReportingService reporting,
+    LocalizationService localizer) =>
+{
+    var access = await RequireBusinessAccessAsync(businessId, httpRequest, db, localizer);
+    if (access.Error is not null)
+    {
+        return access.Error;
+    }
+
+    if (!TryGetReportRange(httpRequest, localizer, out var range, out var rangeError))
+    {
+        return rangeError!;
+    }
+
+    return Results.Ok(await reporting.GetStaffActivityReportAsync(businessId, range));
+});
+
+app.MapGet("/businesses/{businessId:int}/reports/suspicious-activity", async (
+    int businessId,
+    HttpRequest httpRequest,
+    AppDbContext db,
+    ReportingService reporting,
+    Microsoft.Extensions.Options.IOptions<ReportingOptions> reportingOptions,
+    LocalizationService localizer) =>
+{
+    var access = await RequireBusinessAccessAsync(businessId, httpRequest, db, localizer);
+    if (access.Error is not null)
+    {
+        return access.Error;
+    }
+
+    if (!TryGetReportRange(httpRequest, localizer, out var range, out var rangeError))
+    {
+        return rangeError!;
+    }
+
+    return Results.Ok(await reporting.GetSuspiciousActivityReportAsync(businessId, range, reportingOptions.Value));
+});
+
+app.MapGet("/admin/reports/overview", async (
+    HttpRequest httpRequest,
+    AppDbContext db,
+    ReportingService reporting,
+    IConfiguration configuration,
+    LocalizationService localizer) =>
+{
+    var session = await GetAuthSessionAsync(httpRequest, db);
+    if (session is null)
+    {
+        return Results.Unauthorized();
+    }
+
+    if (!IsPlatformAdmin(session.PhoneNumber, configuration))
+    {
+        return Results.Forbid();
+    }
+
+    if (!TryGetReportRange(httpRequest, localizer, out var range, out var rangeError))
+    {
+        return rangeError!;
+    }
+
+    return Results.Ok(await reporting.GetPlatformOverviewReportAsync(range));
+});
+
+app.MapGet("/admin/reports/vendor-comparison", async (
+    HttpRequest httpRequest,
+    AppDbContext db,
+    ReportingService reporting,
+    IConfiguration configuration,
+    LocalizationService localizer) =>
+{
+    var session = await GetAuthSessionAsync(httpRequest, db);
+    if (session is null)
+    {
+        return Results.Unauthorized();
+    }
+
+    if (!IsPlatformAdmin(session.PhoneNumber, configuration))
+    {
+        return Results.Forbid();
+    }
+
+    if (!TryGetReportRange(httpRequest, localizer, out var range, out var rangeError))
+    {
+        return rangeError!;
+    }
+
+    var sort = httpRequest.Query["sort"].ToString();
+    var (page, pageSize) = GetPaging(httpRequest);
+
+    return Results.Ok(await reporting.GetVendorComparisonReportAsync(range, page, pageSize, sort));
+});
+
 app.Run();
 
 static async Task<AuthSession?> GetAuthSessionAsync(HttpRequest request, AppDbContext db)
@@ -1549,4 +1949,92 @@ static IResult NotFound(HttpRequest request, LocalizationService localizer, stri
     var language = GetRequestLanguage(request, localizer);
     var message = localizer.Translate(key, language);
     return Results.NotFound(new { detail = message });
+}
+
+static bool TryGetReportRange(
+    HttpRequest request,
+    LocalizationService localizer,
+    out ReportDateRange range,
+    out IResult? error)
+{
+    var startRaw = request.Query["start"].ToString();
+    var endRaw = request.Query["end"].ToString();
+
+    var now = DateTime.UtcNow;
+    var parseStyles = System.Globalization.DateTimeStyles.AssumeUniversal
+        | System.Globalization.DateTimeStyles.AdjustToUniversal;
+
+    var end = string.IsNullOrWhiteSpace(endRaw)
+        ? now
+        : DateTime.TryParse(endRaw, System.Globalization.CultureInfo.InvariantCulture, parseStyles, out var endValue)
+            ? endValue
+            : now;
+
+    var start = string.IsNullOrWhiteSpace(startRaw)
+        ? end.AddDays(-30)
+        : DateTime.TryParse(startRaw, System.Globalization.CultureInfo.InvariantCulture, parseStyles, out var startValue)
+            ? startValue
+            : end.AddDays(-30);
+
+    if (start > end)
+    {
+        error = BadRequest(request, localizer, "Invalid date range");
+        range = new ReportDateRange(end.AddDays(-30), end);
+        return false;
+    }
+
+    range = new ReportDateRange(start, end);
+    error = null;
+    return true;
+}
+
+static (int Page, int PageSize) GetPaging(HttpRequest request)
+{
+    var pageValue = int.TryParse(request.Query["page"], out var pageParsed) ? pageParsed : 1;
+    var sizeValue = int.TryParse(request.Query["pageSize"], out var sizeParsed) ? sizeParsed : 25;
+
+    var page = Math.Max(pageValue, 1);
+    var pageSize = Math.Clamp(sizeValue, 1, 100);
+
+    return (page, pageSize);
+}
+
+static bool IsPlatformAdmin(string phoneNumber, IConfiguration configuration)
+{
+    var raw = configuration.GetValue<string>("Reporting:AdminPhones") ?? string.Empty;
+    if (string.IsNullOrWhiteSpace(raw))
+    {
+        return false;
+    }
+
+    var admins = raw
+        .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+    return admins.Any(admin => string.Equals(admin, phoneNumber, StringComparison.Ordinal));
+}
+
+static async Task<(Business? Business, AuthSession? Session, IResult? Error)> RequireBusinessAccessAsync(
+    int businessId,
+    HttpRequest httpRequest,
+    AppDbContext db,
+    LocalizationService localizer)
+{
+    var business = await db.Businesses.FirstOrDefaultAsync(b => b.Id == businessId);
+    if (business is null)
+    {
+        return (null, null, NotFound(httpRequest, localizer, "Business not found"));
+    }
+
+    var session = await GetAuthSessionAsync(httpRequest, db);
+    if (session is null)
+    {
+        return (business, null, Results.Unauthorized());
+    }
+
+    if (!await HasBusinessAccessAsync(db, business, session.PhoneNumber))
+    {
+        return (business, session, Results.Forbid());
+    }
+
+    return (business, session, null);
 }

@@ -15,6 +15,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<Staff> Staff => Set<Staff>();
     public DbSet<AuthOtp> AuthOtps => Set<AuthOtp>();
     public DbSet<AuthSession> AuthSessions => Set<AuthSession>();
+    public DbSet<MagicLinkToken> MagicLinkTokens => Set<MagicLinkToken>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -40,5 +41,12 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
 
         modelBuilder.Entity<StampTransaction>()
             .HasIndex(t => t.IssuedAt);
+
+        modelBuilder.Entity<MagicLinkToken>()
+            .HasIndex(m => m.Token)
+            .IsUnique();
+
+        modelBuilder.Entity<MagicLinkToken>()
+            .HasIndex(m => m.BusinessId);
     }
 }

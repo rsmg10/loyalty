@@ -25,7 +25,9 @@ public sealed class LocalizationService
         ["Phone number, purpose, and code are required"] = "رقم الهاتف والغرض والرمز مطلوبة",
         ["Invalid or expired code"] = "الرمز غير صالح أو منتهي",
         ["Display name and phone number are required"] = "الاسم ورقم الهاتف مطلوبان",
-        ["Object storage is not configured."] = "تخزين الملفات غير مُعدّ"
+        ["Object storage is not configured."] = "تخزين الملفات غير مُعدّ",
+        ["Magic link not found or expired"] = "رابط الدخول غير صالح أو منتهي",
+        ["Invalid date range"] = "نطاق التاريخ غير صالح"
     };
 
     public string Translate(string key, string language)

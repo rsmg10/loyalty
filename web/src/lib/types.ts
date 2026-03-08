@@ -107,6 +107,14 @@ export type LoyaltyMediaResponse = {
   url: string;
 };
 
+export type MagicLinkResponse = {
+  token: string;
+  url: string;
+  expiresAt: string;
+  businessId: number;
+  businessName: string;
+};
+
 export type AuthMeResponse = {
   phoneNumber: string;
   ownerBusinesses: BusinessSummary[];

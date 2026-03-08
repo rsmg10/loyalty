@@ -5,6 +5,7 @@ import type {
   BusinessStatsResponse,
   CustomerStatusResponse,
   LoyaltyMediaResponse,
+  MagicLinkResponse,
   RedemptionResponse,
   RedemptionSummary,
   StampIssueResponse,
@@ -50,6 +51,8 @@ export function useLoyaltyApi(token: string) {
     getStats: (businessId: number) =>
       apiGet<BusinessStatsResponse>(`/businesses/${businessId}/stats`, token),
     uploadMedia: (businessId: number, formData: FormData) =>
-      apiPostForm<LoyaltyMediaResponse>(`/businesses/${businessId}/loyalty-media`, formData, token)
+      apiPostForm<LoyaltyMediaResponse>(`/businesses/${businessId}/loyalty-media`, formData, token),
+    createMagicLink: (businessId: number) =>
+      apiPost<MagicLinkResponse>(`/businesses/${businessId}/magic-links`, {}, token)
   };
 }

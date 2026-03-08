@@ -10,7 +10,7 @@ This file is the source-of-truth plan/status tracker for mobile/PWA work. Keep i
 - [x] Loyalty status screen (business + reward + progress)
 - [x] Visit history list (optional)
 - [x] Localization (English/Arabic + RTL support)
-- [ ] Magic link entry (optional future)
+- [x] Magic link entry (QR)
 - [ ] Show program name/description + stamp expiration info
 - [ ] Stamp transaction history (optional detailed audit)
 - [ ] Show program icon + reward image when provided
@@ -18,6 +18,7 @@ This file is the source-of-truth plan/status tracker for mobile/PWA work. Keep i
 ## Planned Screens
 
 - Magic link / OTP login
+- Magic link landing
 - Loyalty status (business name, reward, progress)
 - Visit history (optional)
 - Stamp history (optional)
@@ -33,10 +34,12 @@ This file is the source-of-truth plan/status tracker for mobile/PWA work. Keep i
 - Status data comes from the loyalty cycle snapshot, so the reward text stays consistent even if the business updates its config.
 - Status/history endpoints require the token phone number to match the `phoneNumber` in the URL.
 - Visit/redemption staff tracking happens in the backend; no customer-side input is needed.
-- For now, customers enter a `businessId` manually (from staff/QR). Magic links can replace this later.
+- Customers can enter a `businessId` manually or use a magic link/QR to prefill it.
+- Magic links are now supported via `/magic?token=...` and prefill the business ID.
 - Loyalty status now includes program metadata and optional stamp expiration info.
 - Status response fields include `programName`, `programDescription`, `stampExpirationDays`, `rewardAvailableAt`, and `lastStampAt`.
 - Status response fields also include `programIconUrl` and `rewardImageUrl`.
+- Reporting endpoints are web/admin only; the mobile app does not call them.
 
 ## API Checklist
 
@@ -46,6 +49,7 @@ This file is the source-of-truth plan/status tracker for mobile/PWA work. Keep i
 - GET `/businesses/{businessId}/customers/{phoneNumber}` (status)
 - GET `/businesses/{businessId}/customers/{phoneNumber}/visits` (optional history)
 - GET `/businesses/{businessId}/customers/{phoneNumber}/stamps` (optional detailed history)
+- GET `/magic-links/{token}` (resolve magic link to business info)
 
 ## Local Dev
 

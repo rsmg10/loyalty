@@ -40,8 +40,8 @@
 
         <SectionGroup
           section-id="front-counter"
-          title="Front counter"
-          subtitle="Fast stamps and redemptions for busy shifts."
+          :title="$t('dashboard.frontCounter')"
+          :subtitle="$t('dashboard.frontCounterSubtitle')"
           :default-open="true"
         >
           <VisitEntryCard
@@ -76,8 +76,8 @@
 
         <SectionGroup
           section-id="customer-care"
-          title="Customer care"
-          subtitle="Lookup, profile updates, and membership joins."
+          :title="$t('dashboard.customerCare')"
+          :subtitle="$t('dashboard.customerCareSubtitle')"
           :default-open="true"
         >
           <CustomerLookupCard
@@ -117,8 +117,8 @@
         <SectionGroup
           v-if="isOwner"
           section-id="owner-tools"
-          title="Owner tools"
-          subtitle="Program controls, staff, and reporting."
+          :title="$t('dashboard.ownerTools')"
+          :subtitle="$t('dashboard.ownerToolsSubtitle')"
           :default-open="false"
         >
           <LoyaltyConfigCard
@@ -137,6 +137,16 @@
             @upload-reward-image="uploadRewardImage"
             @save="saveLoyaltyConfig"
             @refresh="loadLoyaltyConfig"
+          />
+          <MagicLinkCard
+            :link="magicLink?.url || null"
+            :expires-at="magicLink?.expiresAt || null"
+            :business-name="magicLink?.businessName || null"
+            :qr-data-url="magicLinkQr"
+            :loading="magicLinkLoading"
+            :message="magicLinkMessage"
+            @generate="generateMagicLink"
+            @copy="copyMagicLink"
           />
           <StaffManagementCard
             :staff="staff"
@@ -209,6 +219,7 @@ import { useI18n } from 'vue-i18n';
 import type {
   BusinessStatsResponse,
   CustomerStatusResponse,
+  MagicLinkResponse,
   RedemptionResponse,
   RedemptionSummary,
   StampIssueResponse,
@@ -233,6 +244,8 @@ import StaffManagementCard from '../components/dashboard/StaffManagementCard.vue
 import RedemptionsCard from '../components/dashboard/RedemptionsCard.vue';
 import StatsCard from '../components/dashboard/StatsCard.vue';
 import SectionGroup from '../components/dashboard/SectionGroup.vue';
+import MagicLinkCard from '../components/dashboard/MagicLinkCard.vue';
+import QRCode from 'qrcode';
 
 type BusinessOption = {
   id: number;
@@ -329,6 +342,11 @@ const stats = ref<BusinessStatsResponse | null>(null);
 const statsLoading = ref(false);
 const statsMessage = ref<Message | null>(null);
 
+const magicLink = ref<MagicLinkResponse | null>(null);
+const magicLinkQr = ref<string | null>(null);
+const magicLinkLoading = ref(false);
+const magicLinkMessage = ref<Message | null>(null);
+
 const activeSection = ref('front-counter');
 const quickActionsOpen = ref(false);
 
@@ -380,6 +398,10 @@ watch(
 watch(
   () => activeBusiness.value?.id,
   async (value) => {
+    magicLink.value = null;
+    magicLinkQr.value = null;
+    magicLinkMessage.value = null;
+
     if (value && isOwner.value) {
       await loadLoyaltyConfig();
     }
@@ -720,6 +742,38 @@ async function loadStats() {
   }
 }
 
+async function generateMagicLink() {
+  if (!activeBusiness.value) {
+    setMessage(magicLinkMessage, 'error', t('messages.selectBusiness'));
+    return;
+  }
+
+  magicLinkLoading.value = true;
+  try {
+    const data = await api.value.createMagicLink(activeBusiness.value.id);
+    magicLink.value = data;
+    magicLinkQr.value = await QRCode.toDataURL(data.url, { width: 240, margin: 1 });
+    setMessage(magicLinkMessage, 'success', t('messages.magicLinkCreated'));
+  } catch (error) {
+    setMessage(magicLinkMessage, 'error', getErrorMessage(error));
+  } finally {
+    magicLinkLoading.value = false;
+  }
+}
+
+async function copyMagicLink() {
+  if (!magicLink.value?.url) {
+    return;
+  }
+
+  try {
+    await navigator.clipboard.writeText(magicLink.value.url);
+    setMessage(magicLinkMessage, 'success', t('messages.magicLinkCopied'));
+  } catch (error) {
+    setMessage(magicLinkMessage, 'error', getErrorMessage(error));
+  }
+}
+
 function onProgramIconChange(event: Event) {
   const target = event.target as HTMLInputElement;
   media.programIconFile = target.files?.[0] ?? null;
@@ -746,7 +800,7 @@ async function uploadProgramIcon() {
     formData.append('file', media.programIconFile);
     const data = await api.value.uploadMedia(activeBusiness.value.id, formData);
     loyaltyConfig.programIconUrl = data.url;
-    setMessage(loyaltyMessage, 'success', 'Program icon uploaded.');
+    setMessage(loyaltyMessage, 'success', t('messages.programIconUploaded'));
   } catch (error) {
     setMessage(loyaltyMessage, 'error', getErrorMessage(error));
   } finally {
@@ -770,7 +824,7 @@ async function uploadRewardImage() {
     formData.append('file', media.rewardImageFile);
     const data = await api.value.uploadMedia(activeBusiness.value.id, formData);
     loyaltyConfig.rewardImageUrl = data.url;
-    setMessage(loyaltyMessage, 'success', 'Reward image uploaded.');
+    setMessage(loyaltyMessage, 'success', t('messages.rewardImageUploaded'));
   } catch (error) {
     setMessage(loyaltyMessage, 'error', getErrorMessage(error));
   } finally {

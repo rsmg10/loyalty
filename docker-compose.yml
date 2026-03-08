@@ -7,6 +7,13 @@ services:
     environment:
       ConnectionStrings__Default: Host=postgres;Port=5432;Database=loyalty;Username=loyalty;Password=loyalty
       Loyalty__VisitCooldownMinutes: 5
+      MagicLinks__CustomerAppBaseUrl: http://localhost:5174
+      MagicLinks__DefaultTtlDays: 180
+      Reporting__AdminPhones: ""
+      Reporting__SuspiciousWindowMinutes: 60
+      Reporting__SuspiciousStaffStampThreshold: 40
+      Reporting__SuspiciousCustomerRedemptionThreshold: 3
+      Reporting__SuspiciousAdjustmentThreshold: 6
       ObjectStorage__Endpoint: minio:9000
       ObjectStorage__AccessKey: minioadmin
       ObjectStorage__SecretKey: minioadmin
@@ -67,6 +74,13 @@ services:
       DOTNET_USE_POLLING_FILE_WATCHER: "1"
       ConnectionStrings__Default: Host=postgres;Port=5432;Database=loyalty;Username=loyalty;Password=loyalty
       Loyalty__VisitCooldownMinutes: 5
+      MagicLinks__CustomerAppBaseUrl: http://localhost:5174
+      MagicLinks__DefaultTtlDays: 180
+      Reporting__AdminPhones: ""
+      Reporting__SuspiciousWindowMinutes: 60
+      Reporting__SuspiciousStaffStampThreshold: 40
+      Reporting__SuspiciousCustomerRedemptionThreshold: 3
+      Reporting__SuspiciousAdjustmentThreshold: 6
       ObjectStorage__Endpoint: minio:9000
       ObjectStorage__AccessKey: minioadmin
       ObjectStorage__SecretKey: minioadmin

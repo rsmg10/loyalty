@@ -32,3 +32,9 @@ export type StampTransactionItem = {
   issuedByPhone: string;
   staffId?: number | null;
 };
+
+export type MagicLinkResolveResponse = {
+  businessId: number;
+  businessName: string;
+  expiresAt: string;
+};

@@ -1,5 +1,11 @@
 import { apiGet, apiPost } from '../lib/api';
-import type { AuthTokenResponse, CustomerStatusResponse, StampTransactionItem, VisitHistoryItem } from '../lib/types';
+import type {
+  AuthTokenResponse,
+  CustomerStatusResponse,
+  MagicLinkResolveResponse,
+  StampTransactionItem,
+  VisitHistoryItem
+} from '../lib/types';
 
 export function useCustomerApi(token: string) {
   return {
@@ -20,6 +26,8 @@ export function useCustomerApi(token: string) {
       apiGet<StampTransactionItem[]>(
         `/businesses/${businessId}/customers/${encodeURIComponent(phoneNumber)}/stamps`,
         token
-      )
+      ),
+    resolveMagicLink: (magicToken: string) =>
+      apiGet<MagicLinkResolveResponse>(`/magic-links/${encodeURIComponent(magicToken)}`, token)
   };
 }

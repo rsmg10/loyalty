@@ -89,3 +89,17 @@ public sealed record StampTransactionItem(
 public sealed record BusinessStatsResponse(int EnrolledCustomers, int StampsIssued, int RewardsRedeemed);
 
 public sealed record LoyaltyMediaResponse(string Kind, string Url);
+
+public sealed record MagicLinkResponse(
+    string Token,
+    string Url,
+    DateTime ExpiresAt,
+    int BusinessId,
+    string BusinessName
+);
+
+public sealed record MagicLinkResolveResponse(
+    int BusinessId,
+    string BusinessName,
+    DateTime ExpiresAt
+);

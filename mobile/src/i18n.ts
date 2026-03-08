@@ -10,7 +10,15 @@ const messages = {
       customerWallet: 'Customer Wallet',
       signOut: 'Sign out',
       shareTitle: 'Share this',
-      shareHint: 'Ask staff for the business ID or scan the shop QR once we enable magic links.'
+      shareHint: 'Ask staff for the business ID or scan the shop QR to open it instantly.'
+    },
+    magic: {
+      title: 'Magic link',
+      loading: 'Linking...',
+      ready: 'Business linked.',
+      continue: 'Continue',
+      invalid: 'Magic link is invalid or expired.',
+      detail: 'We will prefill the business ID for you.'
     },
     auth: {
       login: 'Login',
@@ -59,7 +67,15 @@ const messages = {
       customerWallet: 'محفظة العميل',
       signOut: 'تسجيل الخروج',
       shareTitle: 'شارك هذا',
-      shareHint: 'اطلب من الموظف رقم النشاط أو امسح رمز QR عند تفعيل الروابط.'
+      shareHint: 'اطلب من الموظف رقم النشاط أو امسح رمز QR لفتحه مباشرة.'
+    },
+    magic: {
+      title: 'رابط سريع',
+      loading: 'جارٍ الربط...',
+      ready: 'تم ربط النشاط.',
+      continue: 'متابعة',
+      invalid: 'الرابط غير صالح أو منتهي.',
+      detail: 'سنقوم بتعبئة رقم النشاط لك.'
     },
     auth: {
       login: 'تسجيل الدخول',
