@@ -30,6 +30,8 @@ This file is the source-of-truth plan/status tracker for mobile/PWA work. Keep i
 - Use OTP login to get a session token; send `Authorization: Bearer <token>` on all API requests.
 - The app sends `Accept-Language: en|ar` (or `?lang=`) so backend responses match the selected language.
 - Use `purpose` value `customer` in OTP requests.
+- Dev OTP can be fixed via `Otp__FixedCode` (e.g. `000000`) for local testing.
+- CORS origins are controlled by `Cors__AllowedOrigins` (comma-separated), defaulting to localhost web/mobile ports.
 - The app is read-only: show loyalty status and visit history only.
 - Status data comes from the loyalty cycle snapshot, so the reward text stays consistent even if the business updates its config.
 - Status/history endpoints require the token phone number to match the `phoneNumber` in the URL.
@@ -40,11 +42,13 @@ This file is the source-of-truth plan/status tracker for mobile/PWA work. Keep i
 - Status response fields include `programName`, `programDescription`, `stampExpirationDays`, `rewardAvailableAt`, and `lastStampAt`.
 - Status response fields also include `programIconUrl` and `rewardImageUrl`.
 - Reporting endpoints are web/admin only; the mobile app does not call them.
+- Health check endpoint `/health` is public and used for infra checks only.
 
 ## API Checklist
 
 - POST `/auth/request-otp` { `phoneNumber`, `purpose` }
 - POST `/auth/verify-otp` { `phoneNumber`, `code`, `purpose` } → `token`
+- GET `/health` (public health check)
 - GET `/me` (optional; can be used to confirm the authenticated phone number)
 - GET `/businesses/{businessId}/customers/{phoneNumber}` (status)
 - GET `/businesses/{businessId}/customers/{phoneNumber}/visits` (optional history)

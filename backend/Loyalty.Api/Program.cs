@@ -15,6 +15,20 @@ builder.Services.AddSingleton<LocalizationService>();
 builder.Services.AddScoped<ReportingService>();
 builder.Services.Configure<ReportingOptions>(builder.Configuration.GetSection("Reporting"));
 builder.Services.Configure<ObjectStorageOptions>(builder.Configuration.GetSection("ObjectStorage"));
+builder.Services.Configure<OtpOptions>(builder.Configuration.GetSection("Otp"));
+var corsOriginsValue = builder.Configuration.GetValue<string>("Cors:AllowedOrigins");
+var corsOrigins = string.IsNullOrWhiteSpace(corsOriginsValue)
+    ? new[] { "http://localhost:5173", "http://localhost:5174" }
+    : corsOriginsValue.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.WithOrigins(corsOrigins)
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
 builder.Services.AddSingleton<IObjectStorage>(sp =>
 {
     var options = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<ObjectStorageOptions>>().Value;
@@ -22,6 +36,8 @@ builder.Services.AddSingleton<IObjectStorage>(sp =>
 });
 
 var app = builder.Build();
+
+app.UseCors();
 
 using (var scope = app.Services.CreateScope())
 {
@@ -36,6 +52,8 @@ using (var scope = app.Services.CreateScope())
 }
 
 var visitCooldownMinutes = builder.Configuration.GetValue("Loyalty:VisitCooldownMinutes", 5);
+
+app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 
 app.MapPost("/businesses", async (BusinessCreate request, HttpRequest httpRequest, AppDbContext db, LocalizationService localizer) =>
 {

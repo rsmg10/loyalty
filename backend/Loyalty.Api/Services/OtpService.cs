@@ -1,6 +1,7 @@
 using Loyalty.Api.Data;
 using Loyalty.Api.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace Loyalty.Api.Services;
 
@@ -8,17 +9,21 @@ public sealed class OtpService
 {
     private readonly AppDbContext _db;
     private readonly IMessagingService _messagingService;
+    private readonly OtpOptions _options;
     private readonly TimeSpan _otpTtl = TimeSpan.FromMinutes(10);
 
-    public OtpService(AppDbContext db, IMessagingService messagingService)
+    public OtpService(AppDbContext db, IMessagingService messagingService, IOptions<OtpOptions> options)
     {
         _db = db;
         _messagingService = messagingService;
+        _options = options.Value;
     }
 
     public async Task RequestOtpAsync(string phoneNumber, string purpose, string? language = null)
     {
-        var code = GenerateCode();
+        var code = string.IsNullOrWhiteSpace(_options.FixedCode)
+            ? GenerateCode()
+            : _options.FixedCode.Trim();
         var otp = new AuthOtp
         {
             PhoneNumber = phoneNumber,
