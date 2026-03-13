@@ -775,14 +775,14 @@ async function loadStats() {
   }
 }
 
-async function loadReportOverview() {
+async function loadReportOverview(query?: { start?: string; end?: string }) {
   if (!activeBusiness.value) {
     setMessage(reportOverviewMessage, 'error', t('messages.selectBusiness'));
     return;
   }
   reportOverviewLoading.value = true;
   try {
-    reportOverview.value = await api.value.getReportOverview(activeBusiness.value.id);
+    reportOverview.value = await api.value.getReportOverview(activeBusiness.value.id, query);
     setMessage(reportOverviewMessage, 'success', t('messages.reportOverviewLoaded'));
   } catch (error) {
     setMessage(reportOverviewMessage, 'error', getErrorMessage(error));
@@ -791,14 +791,22 @@ async function loadReportOverview() {
   }
 }
 
-async function loadCustomerActivityReport() {
+async function loadCustomerActivityReport(query?: {
+  start?: string;
+  end?: string;
+  status?: string;
+  reward?: string;
+  sort?: string;
+  page?: number;
+  pageSize?: number;
+}) {
   if (!activeBusiness.value) {
     setMessage(customerActivityMessage, 'error', t('messages.selectBusiness'));
     return;
   }
   customerActivityLoading.value = true;
   try {
-    customerActivityReport.value = await api.value.getCustomerActivityReport(activeBusiness.value.id);
+    customerActivityReport.value = await api.value.getCustomerActivityReport(activeBusiness.value.id, query);
     setMessage(customerActivityMessage, 'success', t('messages.customerActivityLoaded'));
   } catch (error) {
     setMessage(customerActivityMessage, 'error', getErrorMessage(error));
@@ -807,14 +815,20 @@ async function loadCustomerActivityReport() {
   }
 }
 
-async function loadStampIssuanceReport() {
+async function loadStampIssuanceReport(query?: {
+  start?: string;
+  end?: string;
+  staffId?: number;
+  page?: number;
+  pageSize?: number;
+}) {
   if (!activeBusiness.value) {
     setMessage(stampIssuanceMessage, 'error', t('messages.selectBusiness'));
     return;
   }
   stampIssuanceLoading.value = true;
   try {
-    stampIssuanceReport.value = await api.value.getStampIssuanceReport(activeBusiness.value.id);
+    stampIssuanceReport.value = await api.value.getStampIssuanceReport(activeBusiness.value.id, query);
     setMessage(stampIssuanceMessage, 'success', t('messages.stampIssuanceLoaded'));
   } catch (error) {
     setMessage(stampIssuanceMessage, 'error', getErrorMessage(error));

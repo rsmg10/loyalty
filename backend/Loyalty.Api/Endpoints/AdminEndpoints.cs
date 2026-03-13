@@ -380,6 +380,160 @@ public static class AdminEndpoints
                 currentConfig?.OptionalNote,
                 currentConfig?.StampExpirationDays));
         });
+
+        app.MapGet("/admin/businesses/{businessId:int}/staff", async (
+            int businessId,
+            HttpRequest httpRequest,
+            AppDbContext db,
+            IConfiguration configuration,
+            LocalizationService localizer) =>
+        {
+            var session = await GetAuthSessionAsync(httpRequest, db);
+            if (session is null)
+            {
+                return Results.Unauthorized();
+            }
+
+            if (!IsPlatformAdmin(session.PhoneNumber, configuration))
+            {
+                return Results.Forbid();
+            }
+
+            var businessExists = await db.Businesses.AnyAsync(b => b.Id == businessId);
+            if (!businessExists)
+            {
+                return NotFound(httpRequest, localizer, "Business not found");
+            }
+
+            var staffMembers = await db.Staff
+                .Where(s => s.BusinessId == businessId)
+                .OrderByDescending(s => s.CreatedAt)
+                .Select(s => new StaffResponse(
+                    s.Id,
+                    s.DisplayName,
+                    s.PhoneNumber,
+                    s.Active,
+                    s.CreatedAt))
+                .ToListAsync();
+
+            return Results.Ok(staffMembers);
+        });
+
+        app.MapPost("/admin/businesses/{businessId:int}/staff", async (
+            int businessId,
+            StaffCreate request,
+            HttpRequest httpRequest,
+            AppDbContext db,
+            IConfiguration configuration,
+            LocalizationService localizer) =>
+        {
+            if (string.IsNullOrWhiteSpace(request.DisplayName) || string.IsNullOrWhiteSpace(request.PhoneNumber))
+            {
+                return BadRequest(httpRequest, localizer, "Display name and phone number are required");
+            }
+
+            var session = await GetAuthSessionAsync(httpRequest, db);
+            if (session is null)
+            {
+                return Results.Unauthorized();
+            }
+
+            if (!IsPlatformAdmin(session.PhoneNumber, configuration))
+            {
+                return Results.Forbid();
+            }
+
+            var businessExists = await db.Businesses.AnyAsync(b => b.Id == businessId);
+            if (!businessExists)
+            {
+                return NotFound(httpRequest, localizer, "Business not found");
+            }
+
+            var staff = new Staff
+            {
+                BusinessId = businessId,
+                DisplayName = request.DisplayName.Trim(),
+                PhoneNumber = request.PhoneNumber.Trim(),
+                Active = true
+            };
+
+            db.Staff.Add(staff);
+            await db.SaveChangesAsync();
+
+            return Results.Ok(new StaffResponse(
+                staff.Id,
+                staff.DisplayName,
+                staff.PhoneNumber,
+                staff.Active,
+                staff.CreatedAt));
+        });
+
+        app.MapPut("/admin/businesses/{businessId:int}/staff/{staffId:int}", async (
+            int businessId,
+            int staffId,
+            AdminStaffUpdate request,
+            HttpRequest httpRequest,
+            AppDbContext db,
+            IConfiguration configuration,
+            LocalizationService localizer) =>
+        {
+            var session = await GetAuthSessionAsync(httpRequest, db);
+            if (session is null)
+            {
+                return Results.Unauthorized();
+            }
+
+            if (!IsPlatformAdmin(session.PhoneNumber, configuration))
+            {
+                return Results.Forbid();
+            }
+
+            var staff = await db.Staff.FirstOrDefaultAsync(s => s.BusinessId == businessId && s.Id == staffId);
+            if (staff is null)
+            {
+                return NotFound(httpRequest, localizer, "Staff not found");
+            }
+
+            var updated = false;
+
+            if (request.DisplayName is not null)
+            {
+                if (string.IsNullOrWhiteSpace(request.DisplayName))
+                {
+                    return BadRequest(httpRequest, localizer, "Display name is required");
+                }
+                staff.DisplayName = request.DisplayName.Trim();
+                updated = true;
+            }
+
+            if (request.PhoneNumber is not null)
+            {
+                if (string.IsNullOrWhiteSpace(request.PhoneNumber))
+                {
+                    return BadRequest(httpRequest, localizer, "Phone number is required");
+                }
+                staff.PhoneNumber = request.PhoneNumber.Trim();
+                updated = true;
+            }
+
+            if (request.Active is not null)
+            {
+                staff.Active = request.Active.Value;
+                updated = true;
+            }
+
+            if (updated)
+            {
+                await db.SaveChangesAsync();
+            }
+
+            return Results.Ok(new StaffResponse(
+                staff.Id,
+                staff.DisplayName,
+                staff.PhoneNumber,
+                staff.Active,
+                staff.CreatedAt));
+        });
     }
 
     private static async Task<AuthSession?> GetAuthSessionAsync(HttpRequest request, AppDbContext db)

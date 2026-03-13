@@ -24,6 +24,32 @@ import type {
   VisitResponse
 } from '../lib/types';
 
+type ReportQuery = {
+  start?: string;
+  end?: string;
+  page?: number;
+  pageSize?: number;
+  status?: string;
+  sort?: string;
+  reward?: string;
+  staffId?: number;
+};
+
+function withQuery(path: string, params?: ReportQuery) {
+  if (!params) {
+    return path;
+  }
+  const query = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value === undefined || value === null || value === '') {
+      return;
+    }
+    query.set(key, String(value));
+  });
+  const qs = query.toString();
+  return qs ? `${path}?${qs}` : path;
+}
+
 export function useLoyaltyApi(token: string) {
   return {
     getMe: () => apiGet<AuthMeResponse>('/me', token),
@@ -59,16 +85,22 @@ export function useLoyaltyApi(token: string) {
       apiGet<RedemptionSummary[]>(`/businesses/${businessId}/redemptions`, token),
     getStats: (businessId: number) =>
       apiGet<BusinessStatsResponse>(`/businesses/${businessId}/stats`, token),
-    getCustomerActivityReport: (businessId: number) =>
-      apiGet<CustomerActivityReport>(`/businesses/${businessId}/reports/customer-activity`, token),
-    getStampIssuanceReport: (businessId: number) =>
-      apiGet<StampIssuanceReport>(`/businesses/${businessId}/reports/stamp-issuance`, token),
-    getReportOverview: (businessId: number) =>
-      apiGet<VendorOverviewReport>(`/businesses/${businessId}/reports/overview`, token),
-    getAdminOverview: () =>
-      apiGet<PlatformOverviewReport>('/admin/reports/overview', token),
-    getAdminVendorComparison: () =>
-      apiGet<VendorComparisonReport>('/admin/reports/vendor-comparison', token),
+    getCustomerActivityReport: (businessId: number, query?: ReportQuery) =>
+      apiGet<CustomerActivityReport>(
+        withQuery(`/businesses/${businessId}/reports/customer-activity`, query),
+        token
+      ),
+    getStampIssuanceReport: (businessId: number, query?: ReportQuery) =>
+      apiGet<StampIssuanceReport>(
+        withQuery(`/businesses/${businessId}/reports/stamp-issuance`, query),
+        token
+      ),
+    getReportOverview: (businessId: number, query?: ReportQuery) =>
+      apiGet<VendorOverviewReport>(withQuery(`/businesses/${businessId}/reports/overview`, query), token),
+    getAdminOverview: (query?: ReportQuery) =>
+      apiGet<PlatformOverviewReport>(withQuery('/admin/reports/overview', query), token),
+    getAdminVendorComparison: (query?: ReportQuery) =>
+      apiGet<VendorComparisonReport>(withQuery('/admin/reports/vendor-comparison', query), token),
     getAdminBusinesses: (search?: string) => {
       const query = search ? `?search=${encodeURIComponent(search)}` : '';
       return apiGet<PagedResponse<AdminBusinessSummary>>(`/admin/businesses${query}`, token);
@@ -79,6 +111,12 @@ export function useLoyaltyApi(token: string) {
       apiPut<AdminBusinessDetail>(`/admin/businesses/${businessId}`, payload, token),
     createAdminBusiness: (payload: unknown) =>
       apiPost<AdminBusinessDetail>('/admin/businesses', payload, token),
+    getAdminStaff: (businessId: number) =>
+      apiGet<StaffResponse[]>(`/admin/businesses/${businessId}/staff`, token),
+    addAdminStaff: (businessId: number, payload: { displayName: string; phoneNumber: string }) =>
+      apiPost<StaffResponse>(`/admin/businesses/${businessId}/staff`, payload, token),
+    updateAdminStaff: (businessId: number, staffId: number, payload: { displayName?: string; phoneNumber?: string; active?: boolean }) =>
+      apiPut<StaffResponse>(`/admin/businesses/${businessId}/staff/${staffId}`, payload, token),
     uploadMedia: (businessId: number, formData: FormData) =>
       apiPostForm<LoyaltyMediaResponse>(`/businesses/${businessId}/loyalty-media`, formData, token),
     createMagicLink: (businessId: number) =>

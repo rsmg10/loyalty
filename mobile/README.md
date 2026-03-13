@@ -26,7 +26,7 @@ This file is the source-of-truth plan/status tracker for mobile/PWA work. Keep i
 - [ ] Data management (backups, export, retention)
 - [ ] Tenant isolation review (platform/backend)
 - [ ] Customer messaging controls (templates, quiet hours)
-- [ ] Reporting UX polish (web/admin)
+- [x] Reporting UX polish (web/admin)
 
 ## Planned Screens
 
@@ -56,6 +56,7 @@ This file is the source-of-truth plan/status tracker for mobile/PWA work. Keep i
 - Status response fields include `programName`, `programDescription`, `stampExpirationDays`, `rewardAvailableAt`, and `lastStampAt`.
 - Status response fields also include `programIconUrl` and `rewardImageUrl`.
 - Reporting endpoints are web/admin only; the mobile app does not call them.
+- Reporting endpoints support filtering/paging via query params (web/admin only).
 - Platform admin endpoints (`/admin/businesses`, `/admin/reports/*`) are web-only.
 - Health check endpoint `/health` is public and used for infra checks only.
 

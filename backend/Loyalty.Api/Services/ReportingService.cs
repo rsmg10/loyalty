@@ -94,7 +94,8 @@ public sealed class ReportingService(AppDbContext db)
         int page,
         int pageSize,
         string? status,
-        string? sort)
+        string? sort,
+        string? reward)
     {
         var activeCustomerIds = _db.StampTransactions
             .Where(t => t.BusinessId == businessId && t.IssuedAt >= range.Start && t.IssuedAt <= range.End)
@@ -148,6 +149,15 @@ public sealed class ReportingService(AppDbContext db)
             query = query.Where(c => !c.IsActive);
         }
 
+        if (string.Equals(reward, "available", StringComparison.OrdinalIgnoreCase))
+        {
+            query = query.Where(c => c.RewardAvailable);
+        }
+        else if (string.Equals(reward, "unavailable", StringComparison.OrdinalIgnoreCase))
+        {
+            query = query.Where(c => !c.RewardAvailable);
+        }
+
         query = sort switch
         {
             "mostStamps" => query.OrderByDescending(c => c.TotalStampsIssued),
@@ -184,10 +194,16 @@ public sealed class ReportingService(AppDbContext db)
         int businessId,
         ReportDateRange range,
         int page,
-        int pageSize)
+        int pageSize,
+        int? staffId)
     {
         var stampScope = _db.StampTransactions
             .Where(t => t.BusinessId == businessId && t.IssuedAt >= range.Start && t.IssuedAt <= range.End);
+
+        if (staffId.HasValue)
+        {
+            stampScope = stampScope.Where(t => t.StaffId == staffId.Value);
+        }
 
         var totalStamps = await stampScope.SumAsync(t => (int?)t.Quantity) ?? 0;
 

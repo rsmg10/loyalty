@@ -72,9 +72,10 @@ public static class ReportingEndpoints
 
             var status = httpRequest.Query["status"].ToString();
             var sort = httpRequest.Query["sort"].ToString();
+            var reward = httpRequest.Query["reward"].ToString();
             var (page, pageSize) = GetPaging(httpRequest);
 
-            return Results.Ok(await reporting.GetCustomerActivityReportAsync(businessId, range, page, pageSize, status, sort));
+            return Results.Ok(await reporting.GetCustomerActivityReportAsync(businessId, range, page, pageSize, status, sort, reward));
         });
 
         app.MapGet("/businesses/{businessId:int}/reports/stamp-issuance", async (
@@ -96,7 +97,9 @@ public static class ReportingEndpoints
             }
 
             var (page, pageSize) = GetPaging(httpRequest);
-            return Results.Ok(await reporting.GetStampIssuanceReportAsync(businessId, range, page, pageSize));
+            var staffIdRaw = httpRequest.Query["staffId"].ToString();
+            var staffId = int.TryParse(staffIdRaw, out var parsed) ? parsed : (int?)null;
+            return Results.Ok(await reporting.GetStampIssuanceReportAsync(businessId, range, page, pageSize, staffId));
         });
 
         app.MapGet("/businesses/{businessId:int}/reports/redemptions", async (

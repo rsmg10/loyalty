@@ -6,7 +6,41 @@
     </div>
     <p class="mt-2 text-sm text-dusk/70">{{ $t('admin.vendorComparisonDescription') }}</p>
     <div class="mt-4 space-y-3">
-      <button class="btn-ghost w-full" :disabled="loading" @click="$emit('refresh')">
+      <div class="grid gap-2 sm:grid-cols-2">
+        <div>
+          <label class="text-xs font-semibold uppercase tracking-wide text-dusk/60">{{ $t('cards.startDate') }}</label>
+          <input v-model="startDate" type="date" class="input" />
+        </div>
+        <div>
+          <label class="text-xs font-semibold uppercase tracking-wide text-dusk/60">{{ $t('cards.endDate') }}</label>
+          <input v-model="endDate" type="date" class="input" />
+        </div>
+      </div>
+      <div class="grid gap-2 sm:grid-cols-2">
+        <select v-model.number="pageSize" class="input">
+          <option :value="10">10</option>
+          <option :value="25">25</option>
+          <option :value="50">50</option>
+        </select>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <button class="btn-ghost" :disabled="loading" @click="setPreset(7)">
+          {{ $t('cards.last7Days') }}
+        </button>
+        <button class="btn-ghost" :disabled="loading" @click="setPreset(30)">
+          {{ $t('cards.last30Days') }}
+        </button>
+        <button class="btn-ghost" :disabled="loading" @click="setPreset(90)">
+          {{ $t('cards.last90Days') }}
+        </button>
+        <button class="btn-ghost" :disabled="loading" @click="clearRange">
+          {{ $t('cards.clearRange') }}
+        </button>
+        <button v-if="report" class="btn-ghost" @click="exportCsv">
+          {{ $t('cards.exportCsv') }}
+        </button>
+      </div>
+      <button class="btn-ghost w-full" :disabled="loading" @click="applyRange">
         {{ loading ? $t('cards.loading') : $t('admin.loadVendorComparison') }}
       </button>
       <div v-if="report" class="rounded-xl bg-white/70 p-3 text-sm text-dusk/80">
@@ -37,6 +71,15 @@
             </div>
           </div>
         </div>
+        <div class="mt-3 flex flex-wrap items-center gap-2 text-xs text-dusk/70">
+          <button class="btn-ghost" :disabled="page <= 1" @click="goToPage(page - 1)">
+            {{ $t('cards.prevPage') }}
+          </button>
+          <span>{{ $t('cards.page') }} {{ page }} / {{ totalPages }}</span>
+          <button class="btn-ghost" :disabled="page >= totalPages" @click="goToPage(page + 1)">
+            {{ $t('cards.nextPage') }}
+          </button>
+        </div>
       </div>
       <p v-if="message" :class="messageClass(message.tone)">
         {{ message.text }}
@@ -46,19 +89,58 @@
 </template>
 
 <script setup lang="ts">
+import { computed, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { messageClass } from '../../lib/messages';
 import type { Message } from '../../lib/messages';
 import type { VendorComparisonReport } from '../../lib/types';
+import { downloadCsv } from '../../lib/csv';
 
-defineProps<{
+const props = defineProps<{
   report: VendorComparisonReport | null;
   loading: boolean;
   message: Message | null;
 }>();
 
-defineEmits<{
-  (e: 'refresh'): void;
+const emit = defineEmits<{
+  (e: 'refresh', query?: { start?: string; end?: string; page?: number; pageSize?: number }): void;
 }>();
+
+const startDate = ref('');
+const endDate = ref('');
+const { t } = useI18n();
+const page = ref(1);
+const pageSize = ref(25);
+
+const totalPages = computed(() => {
+  if (!props.report) {
+    return 1;
+  }
+  return Math.max(Math.ceil(props.report.vendors.total / pageSize.value), 1);
+});
+
+watch(
+  () => props.report,
+  (value) => {
+    if (!value) {
+      return;
+    }
+    page.value = value.vendors.page;
+    pageSize.value = value.vendors.pageSize;
+  }
+);
+
+function applyRange() {
+  page.value = 1;
+  emit('refresh', buildQuery());
+}
+
+function clearRange() {
+  startDate.value = '';
+  endDate.value = '';
+  page.value = 1;
+  emit('refresh', buildQuery());
+}
 
 function formatPercent(value: number) {
   if (Number.isNaN(value)) {
@@ -66,4 +148,64 @@ function formatPercent(value: number) {
   }
   return `${(value * 100).toFixed(1)}%`;
 }
+
+function exportCsv() {
+  const report = props.report;
+  if (!report) {
+    return;
+  }
+  const headers = [
+    t('admin.businessName'),
+    t('admin.members'),
+    t('admin.newMembers'),
+    t('admin.activeCustomers'),
+    t('admin.stampsIssued'),
+    t('admin.rewardsRedeemed'),
+    t('admin.redemptionRate'),
+    t('admin.activePrograms')
+  ];
+  const rows = report.vendors.items.map((item) => [
+    item.businessName,
+    item.totalMembers,
+    item.newMembers,
+    item.activeCustomers,
+    item.stampsIssued,
+    item.rewardsRedeemed,
+    `${(item.redemptionRate * 100).toFixed(1)}%`,
+    item.activePrograms
+  ]);
+  downloadCsv('vendor-comparison.csv', headers, rows);
+}
+
+function buildQuery() {
+  return {
+    start: startDate.value || undefined,
+    end: endDate.value || undefined,
+    page: page.value,
+    pageSize: pageSize.value
+  };
+}
+
+function goToPage(nextPage: number) {
+  page.value = Math.max(1, nextPage);
+  emit('refresh', buildQuery());
+}
+
+function setPreset(days: number) {
+  const end = new Date();
+  const start = new Date();
+  start.setDate(end.getDate() - days);
+  startDate.value = formatDateInput(start);
+  endDate.value = formatDateInput(end);
+  applyRange();
+}
+
+function formatDateInput(value: Date) {
+  return value.toISOString().slice(0, 10);
+}
+
+watch(pageSize, () => {
+  page.value = 1;
+  emit('refresh', buildQuery());
+});
 </script>

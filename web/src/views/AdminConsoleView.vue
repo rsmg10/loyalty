@@ -30,7 +30,12 @@
       </div>
       <p class="mt-2 text-sm text-dusk/70">{{ $t('admin.businessesDescription') }}</p>
       <div class="mt-4 space-y-3">
-        <input v-model="businessSearch" class="input" :placeholder="$t('admin.searchBusinesses')" />
+        <input
+          v-model="businessSearch"
+          class="input"
+          :placeholder="$t('admin.searchBusinesses')"
+          @keydown.enter="loadBusinesses"
+        />
         <button class="btn-ghost w-full" :disabled="businessListLoading" @click="loadBusinesses">
           {{ businessListLoading ? $t('cards.loading') : $t('admin.loadBusinesses') }}
         </button>
@@ -91,6 +96,50 @@
 
     <section class="glass-card animate-rise">
       <div class="flex items-center justify-between">
+        <h2 class="section-title">{{ $t('admin.staffTitle') }}</h2>
+        <span class="chip">{{ $t('admin.platform') }}</span>
+      </div>
+      <p class="mt-2 text-sm text-dusk/70">{{ $t('admin.staffDescription') }}</p>
+      <div class="mt-4 space-y-3">
+        <button class="btn-ghost w-full" :disabled="staffLoading || !businessDetail" @click="loadAdminStaff">
+          {{ staffLoading ? $t('cards.loading') : $t('admin.loadStaff') }}
+        </button>
+        <div v-if="staffList.length" class="space-y-2">
+          <div
+            v-for="member in staffList"
+            :key="member.id"
+            class="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-white/70 p-3 text-xs text-dusk/80"
+          >
+            <div>
+              <p class="font-semibold text-dusk">{{ member.displayName }}</p>
+              <p class="text-dusk/70">{{ member.phoneNumber }}</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="chip">{{ member.active ? $t('admin.active') : $t('admin.inactive') }}</span>
+              <button class="btn-ghost" @click="toggleStaff(member)">
+                {{ member.active ? $t('admin.deactivateStaff') : $t('admin.activateStaff') }}
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="rounded-xl border border-white/60 bg-white/70 p-3">
+          <p class="text-xs font-semibold uppercase tracking-wider text-dusk/60">{{ $t('admin.addStaff') }}</p>
+          <div class="mt-3 space-y-2">
+            <input v-model="staffForm.displayName" class="input" :placeholder="$t('admin.staffName')" />
+            <input v-model="staffForm.phoneNumber" class="input" :placeholder="$t('admin.staffPhone')" />
+            <button class="btn-primary w-full" :disabled="staffSaving || !businessDetail" @click="addAdminStaff">
+              {{ staffSaving ? $t('cards.loading') : $t('admin.addStaff') }}
+            </button>
+          </div>
+        </div>
+        <p v-if="staffMessage" :class="messageClass(staffMessage.tone)">
+          {{ staffMessage.text }}
+        </p>
+      </div>
+    </section>
+
+    <section class="glass-card animate-rise">
+      <div class="flex items-center justify-between">
         <h2 class="section-title">{{ $t('admin.createBusinessTitle') }}</h2>
         <span class="chip">{{ $t('admin.platform') }}</span>
       </div>
@@ -144,6 +193,7 @@ import type {
   AdminBusinessUpdate,
   PagedResponse,
   PlatformOverviewReport,
+  StaffResponse,
   VendorComparisonReport
 } from '../lib/types';
 import AdminOverviewCard from '../components/admin/AdminOverviewCard.vue';
@@ -200,6 +250,15 @@ const createForm = reactive({
 const createLoading = ref(false);
 const createMessage = ref<Message | null>(null);
 
+const staffList = ref<StaffResponse[]>([]);
+const staffLoading = ref(false);
+const staffSaving = ref(false);
+const staffMessage = ref<Message | null>(null);
+const staffForm = reactive({
+  displayName: '',
+  phoneNumber: ''
+});
+
 watch(
   () => businessDetail.value,
   (detail) => {
@@ -219,10 +278,10 @@ watch(
   }
 );
 
-async function loadOverview() {
+async function loadOverview(query?: { start?: string; end?: string }) {
   overviewLoading.value = true;
   try {
-    overview.value = await api.getAdminOverview();
+    overview.value = await api.getAdminOverview(query);
     setMessage(overviewMessage, 'success', t('messages.adminOverviewLoaded'));
   } catch (error) {
     setMessage(overviewMessage, 'error', getErrorMessage(error));
@@ -231,10 +290,10 @@ async function loadOverview() {
   }
 }
 
-async function loadVendorComparison() {
+async function loadVendorComparison(query?: { start?: string; end?: string; page?: number; pageSize?: number }) {
   vendorLoading.value = true;
   try {
-    vendorComparison.value = await api.getAdminVendorComparison();
+    vendorComparison.value = await api.getAdminVendorComparison(query);
     setMessage(vendorMessage, 'success', t('messages.adminVendorComparisonLoaded'));
   } catch (error) {
     setMessage(vendorMessage, 'error', getErrorMessage(error));
@@ -268,6 +327,22 @@ async function loadBusinessDetail() {
     setMessage(businessSaveMessage, 'error', getErrorMessage(error));
   } finally {
     businessDetailLoading.value = false;
+  }
+}
+
+async function loadAdminStaff(businessId?: number) {
+  const id = businessId ?? businessDetail.value?.id;
+  if (!id) {
+    return;
+  }
+  staffLoading.value = true;
+  try {
+    staffList.value = await api.getAdminStaff(id);
+    setMessage(staffMessage, 'success', t('messages.adminStaffLoaded'));
+  } catch (error) {
+    setMessage(staffMessage, 'error', getErrorMessage(error));
+  } finally {
+    staffLoading.value = false;
   }
 }
 
@@ -347,7 +422,55 @@ async function createBusiness() {
 function onSelectBusiness(event: Event) {
   const value = (event.target as HTMLSelectElement).value;
   selectedBusinessId.value = value ? Number(value) : '';
-  loadBusinessDetail();
+  const id = selectedBusinessId.value ? Number(selectedBusinessId.value) : null;
+  if (id) {
+    loadBusinessDetail();
+    loadAdminStaff(id);
+  }
+}
+
+async function addAdminStaff() {
+  const id = businessDetail.value?.id;
+  if (!id) {
+    return;
+  }
+  if (!staffForm.displayName.trim() || !staffForm.phoneNumber.trim()) {
+    setMessage(staffMessage, 'error', t('messages.adminStaffRequired'));
+    return;
+  }
+
+  staffSaving.value = true;
+  try {
+    await api.addAdminStaff(id, {
+      displayName: staffForm.displayName,
+      phoneNumber: staffForm.phoneNumber
+    });
+    staffForm.displayName = '';
+    staffForm.phoneNumber = '';
+    await loadAdminStaff();
+    setMessage(staffMessage, 'success', t('messages.adminStaffAdded'));
+  } catch (error) {
+    setMessage(staffMessage, 'error', getErrorMessage(error));
+  } finally {
+    staffSaving.value = false;
+  }
+}
+
+async function toggleStaff(member: StaffResponse) {
+  const id = businessDetail.value?.id;
+  if (!id) {
+    return;
+  }
+  staffSaving.value = true;
+  try {
+    await api.updateAdminStaff(id, member.id, { active: !member.active });
+    await loadAdminStaff();
+    setMessage(staffMessage, 'success', t('messages.adminStaffUpdated'));
+  } catch (error) {
+    setMessage(staffMessage, 'error', getErrorMessage(error));
+  } finally {
+    staffSaving.value = false;
+  }
 }
 
 function backToApp() {
