@@ -11,12 +11,20 @@ import type {
   AdminBusinessSummary,
   AdminBusinessUpdate,
   PagedResponse,
+  ProgramPerformanceReport,
   PlatformOverviewReport,
+  ProgressFunnelReport,
+  RetentionReport,
+  RewardRedemptionReport,
   RedemptionResponse,
   RedemptionSummary,
   StampIssuanceReport,
   StampIssueResponse,
   StampTransactionItem,
+  StaffActivityReport,
+  SuspiciousActivityReport,
+  TimeActivityReport,
+  TopCustomersReport,
   VendorComparisonReport,
   VendorOverviewReport,
   StaffResponse,
@@ -97,6 +105,22 @@ export function useLoyaltyApi(token: string) {
       ),
     getReportOverview: (businessId: number, query?: ReportQuery) =>
       apiGet<VendorOverviewReport>(withQuery(`/businesses/${businessId}/reports/overview`, query), token),
+    getRedemptionsReport: (businessId: number, query?: ReportQuery) =>
+      apiGet<RewardRedemptionReport>(withQuery(`/businesses/${businessId}/reports/redemptions`, query), token),
+    getProgramPerformanceReport: (businessId: number, query?: ReportQuery) =>
+      apiGet<ProgramPerformanceReport>(withQuery(`/businesses/${businessId}/reports/program-performance`, query), token),
+    getProgressFunnelReport: (businessId: number, query?: ReportQuery) =>
+      apiGet<ProgressFunnelReport>(withQuery(`/businesses/${businessId}/reports/progress-funnel`, query), token),
+    getTopCustomersReport: (businessId: number, query?: ReportQuery) =>
+      apiGet<TopCustomersReport>(withQuery(`/businesses/${businessId}/reports/top-customers`, query), token),
+    getRetentionReport: (businessId: number, query?: ReportQuery) =>
+      apiGet<RetentionReport>(withQuery(`/businesses/${businessId}/reports/retention`, query), token),
+    getTimeActivityReport: (businessId: number, query?: ReportQuery) =>
+      apiGet<TimeActivityReport>(withQuery(`/businesses/${businessId}/reports/time-activity`, query), token),
+    getStaffActivityReport: (businessId: number, query?: ReportQuery) =>
+      apiGet<StaffActivityReport>(withQuery(`/businesses/${businessId}/reports/staff-activity`, query), token),
+    getSuspiciousActivityReport: (businessId: number, query?: ReportQuery) =>
+      apiGet<SuspiciousActivityReport>(withQuery(`/businesses/${businessId}/reports/suspicious-activity`, query), token),
     getAdminOverview: (query?: ReportQuery) =>
       apiGet<PlatformOverviewReport>(withQuery('/admin/reports/overview', query), token),
     getAdminVendorComparison: (query?: ReportQuery) =>

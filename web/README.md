@@ -19,18 +19,18 @@ This file is the source-of-truth plan/status tracker for web work. Keep it updat
 - [x] Router + screen split (login/onboarding/app)
 - [x] Localization (English/Arabic + RTL support)
 - [x] Magic link / QR generation for customer app (owner)
-- [ ] Reporting dashboards (overview, activity, stamps, redemptions, staff, suspicious)
+- [x] Reporting dashboards (overview, activity, stamps, redemptions, staff, suspicious)
 - [x] Reporting overview (basic metrics card)
 - [x] Reporting customer activity (basic list)
 - [x] Reporting stamp issuance (basic list)
-- [ ] Reporting redemptions (list)
-- [ ] Reporting program performance
-- [ ] Reporting progress funnel
-- [ ] Reporting top customers
-- [ ] Reporting retention
-- [ ] Reporting time activity
-- [ ] Reporting staff activity
-- [ ] Reporting suspicious activity
+- [x] Reporting redemptions (list)
+- [x] Reporting program performance
+- [x] Reporting progress funnel
+- [x] Reporting top customers
+- [x] Reporting retention
+- [x] Reporting time activity
+- [x] Reporting staff activity
+- [x] Reporting suspicious activity
 - [x] Admin reporting console (platform overview + vendor comparison)
 - [x] Platform admin console (manage businesses + configs)
 - [x] Platform admin staff management (add/disable staff)

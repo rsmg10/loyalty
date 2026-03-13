@@ -202,6 +202,136 @@ export type VendorComparisonReport = {
   vendors: PagedResponse<VendorComparisonItem>;
 };
 
+export type RedemptionReportItem = {
+  id: number;
+  customerId: number;
+  customerPhone: string;
+  customerName?: string | null;
+  rewardName: string;
+  redeemedAt: string;
+  staffId?: number | null;
+  staffName?: string | null;
+  redeemedByPhone?: string | null;
+};
+
+export type RewardRedemptionReport = {
+  range: ReportDateRange;
+  totalRewardsRedeemed: number;
+  redemptionsByDay: { periodStart: string; value: number }[];
+  redemptionsByWeek: { periodStart: string; value: number }[];
+  redemptionsByMonth: { periodStart: string; value: number }[];
+  redemptionsByStaff: StaffCount[];
+  redemptionsByReward: ReasonCount[];
+  recentRedemptions: PagedResponse<RedemptionReportItem>;
+};
+
+export type ProgramPerformanceItem = {
+  programId: number;
+  programName: string;
+  totalMembers: number;
+  newMembers: number;
+  activeMembers: number;
+  totalStampsIssued: number;
+  totalRewardsRedeemed: number;
+  redemptionRate: number;
+  rewardCompletionRate: number;
+  averageDaysToFirstReward?: number | null;
+};
+
+export type ProgramPerformanceReport = {
+  range: ReportDateRange;
+  programs: ProgramPerformanceItem[];
+};
+
+export type ProgressBucket = {
+  label: string;
+  count: number;
+};
+
+export type ProgressFunnelReport = {
+  range: ReportDateRange;
+  stampThreshold: number;
+  buckets: ProgressBucket[];
+  nearCompletionCount: number;
+  rewardAvailableCount: number;
+};
+
+export type TopCustomerItem = {
+  customerId: number;
+  customerPhone: string;
+  customerName?: string | null;
+  totalStamps: number;
+  totalRewards: number;
+  visitCount: number;
+  lastActivityAt?: string | null;
+  currentStampCount: number;
+  stampThreshold: number;
+};
+
+export type TopCustomersReport = {
+  range: ReportDateRange;
+  customers: PagedResponse<TopCustomerItem>;
+};
+
+export type RetentionReport = {
+  range: ReportDateRange;
+  returnedWithin7DaysOfJoin: number;
+  returnedWithin30DaysOfJoin: number;
+  returnedWithin7DaysOfLastActivity: number;
+  returnedWithin30DaysOfLastActivity: number;
+  repeatActivityDistribution: TopCustomerItem[];
+};
+
+export type TimeActivityReport = {
+  range: ReportDateRange;
+  stampsByHour: ReasonCount[];
+  stampsByWeekday: ReasonCount[];
+  redemptionsByHour: ReasonCount[];
+  redemptionsByWeekday: ReasonCount[];
+};
+
+export type StaffActivityItem = {
+  staffId?: number | null;
+  staffName?: string | null;
+  staffPhone?: string | null;
+  stampsIssued: number;
+  rewardsRedeemed: number;
+  lastActionAt?: string | null;
+};
+
+export type StaffActivityEvent = {
+  eventType: string;
+  staffId?: number | null;
+  staffName?: string | null;
+  customerId?: number | null;
+  customerPhone?: string | null;
+  occurredAt: string;
+  quantity: number;
+};
+
+export type StaffActivityReport = {
+  range: ReportDateRange;
+  staffSummary: StaffActivityItem[];
+  recentActivity: StaffActivityEvent[];
+};
+
+export type SuspiciousActivityItem = {
+  eventType: string;
+  reason: string;
+  staffId?: number | null;
+  staffName?: string | null;
+  customerId?: number | null;
+  customerPhone?: string | null;
+  windowStart: string;
+  windowEnd: string;
+  count: number;
+};
+
+export type SuspiciousActivityReport = {
+  range: ReportDateRange;
+  items: SuspiciousActivityItem[];
+};
+
 export type AdminBusinessSummary = {
   id: number;
   name: string;
