@@ -10,6 +10,7 @@ public sealed record LoyaltyConfigCreate(
 );
 
 public sealed record CustomerLookup(string PhoneNumber);
+public sealed record CustomerSelfSignupRequest(string? PhoneNumber, string? DisplayName, string? MobileNumber);
 
 public sealed record CustomerResponse(
     int Id,

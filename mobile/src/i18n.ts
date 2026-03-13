@@ -40,6 +40,8 @@ const messages = {
       loadStatus: 'Load status',
       loadHistory: 'Load history',
       loadStampHistory: 'Load stamp history',
+      joinProgram: 'Join program',
+      signingUp: 'Joining...',
       loading: 'Loading...',
       program: 'Program',
       reward: 'Reward',
@@ -51,13 +53,20 @@ const messages = {
     },
     forms: {
       businessId: 'Business ID',
-      customerPhone: 'Customer phone'
+      customerPhone: 'Customer phone',
+      displayName: 'Display name',
+      mobileNumber: 'Mobile number'
     },
     messages: {
       enterBusiness: 'Enter a business ID.',
       statusLoaded: 'Status loaded.',
       historyLoaded: 'History loaded.',
       stampHistoryLoaded: 'Stamp history loaded.'
+    },
+    errors: {
+      customerNotFound: 'Customer not found',
+      customerNotFoundPrompt: 'No membership yet. Tap join to create your account.',
+      signupSuccess: 'Membership created. Status loaded.'
     }
   },
   ar: {
@@ -97,6 +106,8 @@ const messages = {
       loadStatus: 'تحميل الحالة',
       loadHistory: 'تحميل السجل',
       loadStampHistory: 'تحميل سجل الأختام',
+      joinProgram: 'الانضمام للبرنامج',
+      signingUp: 'جارٍ الانضمام...',
       loading: 'جارٍ التحميل...',
       program: 'البرنامج',
       reward: 'المكافأة',
@@ -108,13 +119,20 @@ const messages = {
     },
     forms: {
       businessId: 'رقم النشاط',
-      customerPhone: 'هاتف العميل'
+      customerPhone: 'هاتف العميل',
+      displayName: 'الاسم المعروض',
+      mobileNumber: 'رقم الهاتف'
     },
     messages: {
       enterBusiness: 'يرجى إدخال رقم النشاط.',
       statusLoaded: 'تم تحميل الحالة.',
       historyLoaded: 'تم تحميل السجل.',
       stampHistoryLoaded: 'تم تحميل سجل الأختام.'
+    },
+    errors: {
+      customerNotFound: 'العميل غير موجود',
+      customerNotFoundPrompt: 'لا يوجد اشتراك بعد. اضغط للانضمام الآن.',
+      signupSuccess: 'تم إنشاء الاشتراك. تم تحميل الحالة.'
     }
   }
 };

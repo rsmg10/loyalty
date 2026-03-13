@@ -18,6 +18,13 @@
         <button class="btn-primary" :disabled="statusLoading" @click="loadStatus">
           {{ statusLoading ? $t('wallet.loading') : $t('wallet.loadStatus') }}
         </button>
+        <div v-if="showSignupAction" class="space-y-3">
+          <input v-model="signup.displayName" class="input" :placeholder="$t('forms.displayName')" />
+          <input v-model="signup.mobileNumber" class="input" :placeholder="$t('forms.mobileNumber')" />
+          <button class="btn-ghost" :disabled="signupLoading" @click="selfSignup">
+            {{ signupLoading ? $t('wallet.signingUp') : $t('wallet.joinProgram') }}
+          </button>
+        </div>
         <div v-if="statusResult" class="rounded-xl bg-cream/70 p-4 text-sm text-dusk">
           <p class="font-semibold">{{ statusResult.businessName }}</p>
           <p class="text-dusk/70">{{ $t('wallet.program') }}: {{ statusResult.programName }}</p>
@@ -109,7 +116,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, watch } from 'vue';
+import { onMounted, reactive, ref, watch } from 'vue';
 import { getErrorMessage } from '../lib/errors';
 import { useCustomerApi } from '../composables/useCustomerApi';
 import type { CustomerStatusResponse, StampTransactionItem, VisitHistoryItem } from '../lib/types';
@@ -133,6 +140,13 @@ const status = reactive({
 const statusResult = ref<CustomerStatusResponse | null>(null);
 const statusLoading = ref(false);
 const statusMessage = ref<Message | null>(null);
+const showSignupAction = ref(false);
+const signupLoading = ref(false);
+const signup = reactive({
+  displayName: '',
+  mobileNumber: ''
+});
+const autoLoaded = ref(false);
 
 const history = ref<VisitHistoryItem[]>([]);
 const historyLoading = ref(false);
@@ -155,6 +169,13 @@ watch(
     status.phone = value || '';
   }
 );
+
+onMounted(() => {
+  if (status.businessId && status.phone && session.isAuthenticated && !autoLoaded.value) {
+    autoLoaded.value = true;
+    loadStatus();
+  }
+});
 
 function messageClass(tone: MessageTone) {
   const base = 'mt-2 rounded-xl px-3 py-2 text-xs font-semibold';
@@ -180,11 +201,41 @@ async function loadStatus() {
   try {
     const data = await customerApi.getStatus(status.businessId, status.phone);
     statusResult.value = data;
+    showSignupAction.value = false;
     setMessage(statusMessage, 'success', t('messages.statusLoaded'));
+  } catch (error) {
+    const message = getErrorMessage(error);
+    if (message === t('errors.customerNotFound')) {
+      showSignupAction.value = true;
+      setMessage(statusMessage, 'info', t('errors.customerNotFoundPrompt'));
+    } else {
+      showSignupAction.value = false;
+      setMessage(statusMessage, 'error', message);
+    }
+  } finally {
+    statusLoading.value = false;
+  }
+}
+
+async function selfSignup() {
+  if (!status.businessId) {
+    setMessage(statusMessage, 'error', t('messages.enterBusiness'));
+    return;
+  }
+  signupLoading.value = true;
+  try {
+    const data = await customerApi.selfSignup(status.businessId, {
+      phoneNumber: status.phone,
+      displayName: signup.displayName,
+      mobileNumber: signup.mobileNumber
+    });
+    statusResult.value = data;
+    showSignupAction.value = false;
+    setMessage(statusMessage, 'success', t('errors.signupSuccess'));
   } catch (error) {
     setMessage(statusMessage, 'error', getErrorMessage(error));
   } finally {
-    statusLoading.value = false;
+    signupLoading.value = false;
   }
 }
 
@@ -227,5 +278,8 @@ function logout() {
   statusResult.value = null;
   history.value = [];
   stampHistory.value = [];
+  showSignupAction.value = false;
+  signup.displayName = '';
+  signup.mobileNumber = '';
 }
 </script>

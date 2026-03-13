@@ -11,9 +11,22 @@ This file is the source-of-truth plan/status tracker for mobile/PWA work. Keep i
 - [x] Visit history list (optional)
 - [x] Localization (English/Arabic + RTL support)
 - [x] Magic link entry (QR)
-- [ ] Show program name/description + stamp expiration info
-- [ ] Stamp transaction history (optional detailed audit)
-- [ ] Show program icon + reward image when provided
+- [x] Show program name/description + stamp expiration info
+- [x] Stamp transaction history (optional detailed audit)
+- [x] Show program icon + reward image when provided
+- [ ] Platform admin console is web-only (no mobile scope)
+
+## Sellability TODOs (Platform)
+
+- [ ] SMS/OTP provider integration (platform/backend)
+- [ ] Subscription + billing (platform/backend)
+- [ ] Platform admin CRUD (web/admin)
+- [ ] Security hardening (rate limits, audit logs)
+- [ ] Observability (logs, error tracking, metrics)
+- [ ] Data management (backups, export, retention)
+- [ ] Tenant isolation review (platform/backend)
+- [ ] Customer messaging controls (templates, quiet hours)
+- [ ] Reporting UX polish (web/admin)
 
 ## Planned Screens
 
@@ -33,6 +46,7 @@ This file is the source-of-truth plan/status tracker for mobile/PWA work. Keep i
 - Dev OTP can be fixed via `Otp__FixedCode` (e.g. `000000`) for local testing.
 - CORS origins are controlled by `Cors__AllowedOrigins` (comma-separated), defaulting to localhost web/mobile ports.
 - The app is read-only: show loyalty status and visit history only.
+- Customers can self-signup after OTP login using `/businesses/{businessId}/self-signup`.
 - Status data comes from the loyalty cycle snapshot, so the reward text stays consistent even if the business updates its config.
 - Status/history endpoints require the token phone number to match the `phoneNumber` in the URL.
 - Visit/redemption staff tracking happens in the backend; no customer-side input is needed.
@@ -42,6 +56,7 @@ This file is the source-of-truth plan/status tracker for mobile/PWA work. Keep i
 - Status response fields include `programName`, `programDescription`, `stampExpirationDays`, `rewardAvailableAt`, and `lastStampAt`.
 - Status response fields also include `programIconUrl` and `rewardImageUrl`.
 - Reporting endpoints are web/admin only; the mobile app does not call them.
+- Platform admin endpoints (`/admin/businesses`, `/admin/reports/*`) are web-only.
 - Health check endpoint `/health` is public and used for infra checks only.
 
 ## API Checklist
@@ -51,6 +66,7 @@ This file is the source-of-truth plan/status tracker for mobile/PWA work. Keep i
 - GET `/health` (public health check)
 - GET `/me` (optional; can be used to confirm the authenticated phone number)
 - GET `/businesses/{businessId}/customers/{phoneNumber}` (status)
+- POST `/businesses/{businessId}/self-signup` (customer, requires auth token)
 - GET `/businesses/{businessId}/customers/{phoneNumber}/visits` (optional history)
 - GET `/businesses/{businessId}/customers/{phoneNumber}/stamps` (optional detailed history)
 - GET `/magic-links/{token}` (resolve magic link to business info)

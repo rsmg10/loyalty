@@ -170,6 +170,24 @@
             :message="statsMessage"
             @refresh="loadStats"
           />
+          <ReportOverviewCard
+            :report="reportOverview"
+            :loading="reportOverviewLoading"
+            :message="reportOverviewMessage"
+            @refresh="loadReportOverview"
+          />
+          <ReportCustomerActivityCard
+            :report="customerActivityReport"
+            :loading="customerActivityLoading"
+            :message="customerActivityMessage"
+            @refresh="loadCustomerActivityReport"
+          />
+          <ReportStampIssuanceCard
+            :report="stampIssuanceReport"
+            :loading="stampIssuanceLoading"
+            :message="stampIssuanceMessage"
+            @refresh="loadStampIssuanceReport"
+          />
         </SectionGroup>
       </section>
     </section>
@@ -218,13 +236,16 @@ import { useLoyaltyApi } from '../composables/useLoyaltyApi';
 import { useI18n } from 'vue-i18n';
 import type {
   BusinessStatsResponse,
+  CustomerActivityReport,
   CustomerStatusResponse,
   MagicLinkResponse,
   RedemptionResponse,
   RedemptionSummary,
+  StampIssuanceReport,
   StampIssueResponse,
   StampTransactionItem,
   StaffResponse,
+  VendorOverviewReport,
   VisitHistoryItem,
   VisitResponse
 } from '../lib/types';
@@ -243,6 +264,9 @@ import LoyaltyConfigCard from '../components/dashboard/LoyaltyConfigCard.vue';
 import StaffManagementCard from '../components/dashboard/StaffManagementCard.vue';
 import RedemptionsCard from '../components/dashboard/RedemptionsCard.vue';
 import StatsCard from '../components/dashboard/StatsCard.vue';
+import ReportCustomerActivityCard from '../components/dashboard/ReportCustomerActivityCard.vue';
+import ReportOverviewCard from '../components/dashboard/ReportOverviewCard.vue';
+import ReportStampIssuanceCard from '../components/dashboard/ReportStampIssuanceCard.vue';
 import SectionGroup from '../components/dashboard/SectionGroup.vue';
 import MagicLinkCard from '../components/dashboard/MagicLinkCard.vue';
 import QRCode from 'qrcode';
@@ -341,6 +365,15 @@ const membershipMessage = ref<Message | null>(null);
 const stats = ref<BusinessStatsResponse | null>(null);
 const statsLoading = ref(false);
 const statsMessage = ref<Message | null>(null);
+const reportOverview = ref<VendorOverviewReport | null>(null);
+const reportOverviewLoading = ref(false);
+const reportOverviewMessage = ref<Message | null>(null);
+const customerActivityReport = ref<CustomerActivityReport | null>(null);
+const customerActivityLoading = ref(false);
+const customerActivityMessage = ref<Message | null>(null);
+const stampIssuanceReport = ref<StampIssuanceReport | null>(null);
+const stampIssuanceLoading = ref(false);
+const stampIssuanceMessage = ref<Message | null>(null);
 
 const magicLink = ref<MagicLinkResponse | null>(null);
 const magicLinkQr = ref<string | null>(null);
@@ -739,6 +772,54 @@ async function loadStats() {
     setMessage(statsMessage, 'error', getErrorMessage(error));
   } finally {
     statsLoading.value = false;
+  }
+}
+
+async function loadReportOverview() {
+  if (!activeBusiness.value) {
+    setMessage(reportOverviewMessage, 'error', t('messages.selectBusiness'));
+    return;
+  }
+  reportOverviewLoading.value = true;
+  try {
+    reportOverview.value = await api.value.getReportOverview(activeBusiness.value.id);
+    setMessage(reportOverviewMessage, 'success', t('messages.reportOverviewLoaded'));
+  } catch (error) {
+    setMessage(reportOverviewMessage, 'error', getErrorMessage(error));
+  } finally {
+    reportOverviewLoading.value = false;
+  }
+}
+
+async function loadCustomerActivityReport() {
+  if (!activeBusiness.value) {
+    setMessage(customerActivityMessage, 'error', t('messages.selectBusiness'));
+    return;
+  }
+  customerActivityLoading.value = true;
+  try {
+    customerActivityReport.value = await api.value.getCustomerActivityReport(activeBusiness.value.id);
+    setMessage(customerActivityMessage, 'success', t('messages.customerActivityLoaded'));
+  } catch (error) {
+    setMessage(customerActivityMessage, 'error', getErrorMessage(error));
+  } finally {
+    customerActivityLoading.value = false;
+  }
+}
+
+async function loadStampIssuanceReport() {
+  if (!activeBusiness.value) {
+    setMessage(stampIssuanceMessage, 'error', t('messages.selectBusiness'));
+    return;
+  }
+  stampIssuanceLoading.value = true;
+  try {
+    stampIssuanceReport.value = await api.value.getStampIssuanceReport(activeBusiness.value.id);
+    setMessage(stampIssuanceMessage, 'success', t('messages.stampIssuanceLoaded'));
+  } catch (error) {
+    setMessage(stampIssuanceMessage, 'error', getErrorMessage(error));
+  } finally {
+    stampIssuanceLoading.value = false;
   }
 }
 

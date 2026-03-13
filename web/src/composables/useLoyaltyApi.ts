@@ -3,13 +3,22 @@ import type {
   AuthMeResponse,
   BusinessDetailResponse,
   BusinessStatsResponse,
+  CustomerActivityReport,
   CustomerStatusResponse,
   LoyaltyMediaResponse,
   MagicLinkResponse,
+  AdminBusinessDetail,
+  AdminBusinessSummary,
+  AdminBusinessUpdate,
+  PagedResponse,
+  PlatformOverviewReport,
   RedemptionResponse,
   RedemptionSummary,
+  StampIssuanceReport,
   StampIssueResponse,
   StampTransactionItem,
+  VendorComparisonReport,
+  VendorOverviewReport,
   StaffResponse,
   VisitHistoryItem,
   VisitResponse
@@ -50,6 +59,26 @@ export function useLoyaltyApi(token: string) {
       apiGet<RedemptionSummary[]>(`/businesses/${businessId}/redemptions`, token),
     getStats: (businessId: number) =>
       apiGet<BusinessStatsResponse>(`/businesses/${businessId}/stats`, token),
+    getCustomerActivityReport: (businessId: number) =>
+      apiGet<CustomerActivityReport>(`/businesses/${businessId}/reports/customer-activity`, token),
+    getStampIssuanceReport: (businessId: number) =>
+      apiGet<StampIssuanceReport>(`/businesses/${businessId}/reports/stamp-issuance`, token),
+    getReportOverview: (businessId: number) =>
+      apiGet<VendorOverviewReport>(`/businesses/${businessId}/reports/overview`, token),
+    getAdminOverview: () =>
+      apiGet<PlatformOverviewReport>('/admin/reports/overview', token),
+    getAdminVendorComparison: () =>
+      apiGet<VendorComparisonReport>('/admin/reports/vendor-comparison', token),
+    getAdminBusinesses: (search?: string) => {
+      const query = search ? `?search=${encodeURIComponent(search)}` : '';
+      return apiGet<PagedResponse<AdminBusinessSummary>>(`/admin/businesses${query}`, token);
+    },
+    getAdminBusiness: (businessId: number) =>
+      apiGet<AdminBusinessDetail>(`/admin/businesses/${businessId}`, token),
+    updateAdminBusiness: (businessId: number, payload: AdminBusinessUpdate) =>
+      apiPut<AdminBusinessDetail>(`/admin/businesses/${businessId}`, payload, token),
+    createAdminBusiness: (payload: unknown) =>
+      apiPost<AdminBusinessDetail>('/admin/businesses', payload, token),
     uploadMedia: (businessId: number, formData: FormData) =>
       apiPostForm<LoyaltyMediaResponse>(`/businesses/${businessId}/loyalty-media`, formData, token),
     createMagicLink: (businessId: number) =>

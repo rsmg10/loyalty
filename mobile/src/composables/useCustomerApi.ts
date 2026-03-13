@@ -12,6 +12,8 @@ export function useCustomerApi(token: string) {
     requestOtp: (phoneNumber: string) => apiPost('/auth/request-otp', { phoneNumber, purpose: 'customer' }),
     verifyOtp: (payload: { phoneNumber: string; code: string }) =>
       apiPost<AuthTokenResponse>('/auth/verify-otp', { ...payload, purpose: 'customer' }),
+    selfSignup: (businessId: string, payload: { phoneNumber?: string; displayName?: string; mobileNumber?: string }) =>
+      apiPost<CustomerStatusResponse>(`/businesses/${businessId}/self-signup`, payload, token),
     getStatus: (businessId: string, phoneNumber: string) =>
       apiGet<CustomerStatusResponse>(
         `/businesses/${businessId}/customers/${encodeURIComponent(phoneNumber)}`,

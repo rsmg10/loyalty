@@ -618,6 +618,106 @@ app.MapPost("/businesses/{businessId:int}/memberships", async (
         cycle.LastStampAt));
 });
 
+app.MapPost("/businesses/{businessId:int}/self-signup", async (
+    int businessId,
+    CustomerSelfSignupRequest request,
+    HttpRequest httpRequest,
+    AppDbContext db,
+    LocalizationService localizer) =>
+{
+    var business = await db.Businesses
+        .Include(b => b.LoyaltyConfig)
+        .FirstOrDefaultAsync(b => b.Id == businessId);
+
+    if (business is null)
+    {
+        return NotFound(httpRequest, localizer, "Business not found");
+    }
+
+    var config = business.LoyaltyConfig;
+    if (config is null || !config.Active)
+    {
+        return BadRequest(httpRequest, localizer, "Business has no active loyalty configuration");
+    }
+
+    var session = await GetAuthSessionAsync(httpRequest, db);
+    if (session is null)
+    {
+        return Results.Unauthorized();
+    }
+
+    var normalizedPhone = string.IsNullOrWhiteSpace(request.PhoneNumber)
+        ? session.PhoneNumber
+        : request.PhoneNumber.Trim();
+
+    if (!string.Equals(session.PhoneNumber, normalizedPhone, StringComparison.Ordinal))
+    {
+        return Results.Forbid();
+    }
+
+    var customer = await GetOrCreateCustomerAsync(db, normalizedPhone);
+    var updated = false;
+
+    if (request.DisplayName is not null)
+    {
+        var displayName = string.IsNullOrWhiteSpace(request.DisplayName) ? null : request.DisplayName.Trim();
+        if (!string.Equals(customer.DisplayName, displayName, StringComparison.Ordinal))
+        {
+            customer.DisplayName = displayName;
+            updated = true;
+        }
+    }
+
+    if (request.MobileNumber is not null)
+    {
+        var mobileNumber = string.IsNullOrWhiteSpace(request.MobileNumber) ? null : request.MobileNumber.Trim();
+        if (!string.Equals(customer.MobileNumber, mobileNumber, StringComparison.Ordinal))
+        {
+            customer.MobileNumber = mobileNumber;
+            updated = true;
+        }
+    }
+
+    if (updated)
+    {
+        await db.SaveChangesAsync();
+    }
+
+    var cycle = await GetOrCreateCycleAsync(db, businessId, customer, config);
+
+    var rewardName = cycle.RewardNameSnapshot ?? config.RewardName;
+    var visitThreshold = cycle.VisitThresholdSnapshot ?? config.VisitThreshold;
+    var optionalNote = cycle.OptionalNoteSnapshot ?? config.OptionalNote;
+    var now = DateTime.UtcNow;
+    var expirationApplied = ApplyExpirationRules(cycle, config, now);
+
+    if (cycle.Status != "REWARD_AVAILABLE" && cycle.VisitCount >= visitThreshold)
+    {
+        cycle.Status = "REWARD_AVAILABLE";
+        cycle.RewardAvailableAt ??= now;
+        expirationApplied = true;
+    }
+
+    if (expirationApplied)
+    {
+        await db.SaveChangesAsync();
+    }
+
+    return Results.Ok(new CustomerStatusResponse(
+        business.Name,
+        config.ProgramName,
+        config.ProgramDescription,
+        config.ProgramIconUrl,
+        rewardName,
+        config.RewardImageUrl,
+        cycle.VisitCount,
+        visitThreshold,
+        optionalNote,
+        config.StampExpirationDays,
+        cycle.RewardAvailableAt,
+        cycle.LastStampAt));
+});
+
 app.MapPost("/businesses/{businessId:int}/loyalty-media", async (
     int businessId,
     HttpRequest httpRequest,
@@ -1477,6 +1577,7 @@ app.MapGet("/businesses/{businessId:int}", async (
 });
 
 app.MapReportingEndpoints();
+app.MapAdminEndpoints();
 
 app.Run();
 

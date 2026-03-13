@@ -20,13 +20,38 @@ This file is the source-of-truth plan/status tracker for web work. Keep it updat
 - [x] Localization (English/Arabic + RTL support)
 - [x] Magic link / QR generation for customer app (owner)
 - [ ] Reporting dashboards (overview, activity, stamps, redemptions, staff, suspicious)
-- [ ] Admin reporting console (platform overview + vendor comparison)
-- [ ] Stamp issuance flow (quantity + reason) using `/stamps`
-- [ ] Membership join action (explicit create via `/memberships`)
-- [ ] Stamp transaction history view (audit)
-- [ ] Business stats card (enrolled customers, stamps issued, rewards redeemed)
-- [ ] Loyalty program fields (program name/description + stamp expiration days)
-- [ ] Loyalty media upload (program icon + reward image)
+- [x] Reporting overview (basic metrics card)
+- [x] Reporting customer activity (basic list)
+- [x] Reporting stamp issuance (basic list)
+- [ ] Reporting redemptions (list)
+- [ ] Reporting program performance
+- [ ] Reporting progress funnel
+- [ ] Reporting top customers
+- [ ] Reporting retention
+- [ ] Reporting time activity
+- [ ] Reporting staff activity
+- [ ] Reporting suspicious activity
+- [x] Admin reporting console (platform overview + vendor comparison)
+- [x] Platform admin console (manage businesses + configs)
+- [ ] Platform admin staff management (add/disable staff)
+- [x] Stamp issuance flow (quantity + reason) using `/stamps`
+- [x] Membership join action (explicit create via `/memberships`)
+- [x] Stamp transaction history view (audit)
+- [x] Business stats card (enrolled customers, stamps issued, rewards redeemed)
+- [x] Loyalty program fields (program name/description + stamp expiration days)
+- [x] Loyalty media upload (program icon + reward image)
+
+## Sellability TODOs
+
+- [ ] SMS/OTP provider integration (Twilio/MessageBird/etc) with env config
+- [ ] Subscription + billing (plans, trials, invoicing, usage limits)
+- [ ] Platform admin CRUD (create/disable vendors, reset owner access)
+- [ ] Security hardening (rate limits, audit logs, admin allowlist)
+- [ ] Observability (structured logs, error tracking, metrics/alerts)
+- [ ] Data management (backups, export, retention, GDPR delete)
+- [ ] Tenant isolation review (no cross-business access paths)
+- [ ] Customer messaging controls (templates, quiet hours, defaults)
+- [ ] Reporting UX polish (date range picker, filters, CSV export)
 
 ## Planned Screens
 
@@ -90,6 +115,7 @@ This file is the source-of-truth plan/status tracker for web work. Keep it updat
 - POST `/businesses/{businessId}/visits` (staff/owner)
 - POST `/businesses/{businessId}/stamps` (staff/owner, `{ customerPhone, quantity, reason, staffId? }`)
 - POST `/businesses/{businessId}/memberships` (staff/owner)
+- POST `/businesses/{businessId}/self-signup` (customer, requires auth token)
 - POST `/businesses/{businessId}/loyalty-media` (owner only, multipart form, `kind=program_icon|reward_image`, `file`)
 - POST `/businesses/{businessId}/redemptions` (staff/owner)
 - GET `/businesses/{businessId}/redemptions` (owner only)
@@ -108,6 +134,10 @@ This file is the source-of-truth plan/status tracker for web work. Keep it updat
 - GET `/businesses/{businessId}/reports/suspicious-activity`
 - GET `/admin/reports/overview` (platform admin)
 - GET `/admin/reports/vendor-comparison` (platform admin)
+- GET `/admin/businesses` (platform admin)
+- GET `/admin/businesses/{businessId}` (platform admin)
+- POST `/admin/businesses` (platform admin, same payload as onboarding)
+- PUT `/admin/businesses/{businessId}` (platform admin, update business + program)
 - POST `/businesses/{businessId}/magic-links` (owner/staff, returns customer app link)
 - GET `/businesses/{businessId}/customers/{phoneNumber}` (staff/owner)
 - PUT `/businesses/{businessId}/customers/{phoneNumber}/profile` (staff/owner, includes optional `mobileNumber`)

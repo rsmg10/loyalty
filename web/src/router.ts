@@ -3,6 +3,7 @@ import { useSessionStore } from './stores/session';
 import LoginView from './views/LoginView.vue';
 import DashboardView from './views/DashboardView.vue';
 import OnboardingView from './views/OnboardingView.vue';
+import AdminConsoleView from './views/AdminConsoleView.vue';
 
 const router = createRouter({
   history: createWebHistory(),
@@ -10,7 +11,8 @@ const router = createRouter({
     { path: '/', redirect: '/app' },
     { path: '/login', name: 'login', component: LoginView },
     { path: '/onboarding', name: 'onboarding', component: OnboardingView, meta: { requiresAuth: true } },
-    { path: '/app', name: 'app', component: DashboardView, meta: { requiresAuth: true } }
+    { path: '/app', name: 'app', component: DashboardView, meta: { requiresAuth: true } },
+    { path: '/admin', name: 'admin', component: AdminConsoleView, meta: { requiresAuth: true } }
   ]
 });
 

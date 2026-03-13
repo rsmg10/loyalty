@@ -58,6 +58,13 @@
           <p class="text-xs font-semibold uppercase tracking-wider text-dusk/60">{{ $t('onboarding.remember') }}</p>
           <p class="mt-2">{{ $t('onboarding.snapshot') }}</p>
         </div>
+        <div class="rounded-xl border border-white/60 bg-white/70 p-4">
+          <p class="text-xs font-semibold uppercase tracking-wider text-dusk/60">{{ $t('admin.platform') }}</p>
+          <p class="mt-2">{{ $t('admin.adminHint') }}</p>
+          <button class="btn-ghost mt-3 w-full" @click="openAdminConsole">
+            {{ $t('admin.openConsole') }}
+          </button>
+        </div>
       </div>
     </section>
   </main>
@@ -71,6 +78,7 @@ import { messageClass, setMessage } from '../lib/messages';
 import type { Message } from '../lib/messages';
 import { useSessionStore } from '../stores/session';
 import { useI18n } from 'vue-i18n';
+import { useLoyaltyApi } from '../composables/useLoyaltyApi';
 
 const session = useSessionStore();
 const router = useRouter();
@@ -120,5 +128,9 @@ async function submitOnboarding() {
   } finally {
     onboardingLoading.value = false;
   }
+}
+
+function openAdminConsole() {
+  router.push('/admin');
 }
 </script>
