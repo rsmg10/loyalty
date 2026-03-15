@@ -17,6 +17,7 @@ builder.Services.Configure<ReportingOptions>(builder.Configuration.GetSection("R
 builder.Services.Configure<ObjectStorageOptions>(builder.Configuration.GetSection("ObjectStorage"));
 builder.Services.Configure<OtpOptions>(builder.Configuration.GetSection("Otp"));
 var corsOriginsValue = builder.Configuration.GetValue<string>("Cors:AllowedOrigins");
+var corsAllowAll = builder.Configuration.GetValue("Cors:AllowAll", false);
 var corsOrigins = string.IsNullOrWhiteSpace(corsOriginsValue)
     ? new[] { "http://localhost:5173", "http://localhost:5174" }
     : corsOriginsValue.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
@@ -24,6 +25,14 @@ builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
+        if (corsAllowAll)
+        {
+            policy.AllowAnyOrigin()
+                .AllowAnyHeader()
+                .AllowAnyMethod();
+            return;
+        }
+
         policy.WithOrigins(corsOrigins)
             .AllowAnyHeader()
             .AllowAnyMethod();

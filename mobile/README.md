@@ -44,7 +44,7 @@ This file is the source-of-truth plan/status tracker for mobile/PWA work. Keep i
 - The app sends `Accept-Language: en|ar` (or `?lang=`) so backend responses match the selected language.
 - Use `purpose` value `customer` in OTP requests.
 - Dev OTP can be fixed via `Otp__FixedCode` (e.g. `000000`) for local testing.
-- CORS origins are controlled by `Cors__AllowedOrigins` (comma-separated), defaulting to localhost web/mobile ports.
+- CORS origins are controlled by `Cors__AllowedOrigins` (comma-separated), defaulting to localhost web/mobile ports. For LAN/mobile testing, add your IP (e.g. `http://192.168.1.10:5174`). You can also set `Cors__AllowAll=true` for local dev.
 - The app is read-only: show loyalty status and visit history only.
 - Customers can self-signup after OTP login using `/businesses/{businessId}/self-signup`.
 - Status data comes from the loyalty cycle snapshot, so the reward text stays consistent even if the business updates its config.

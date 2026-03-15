@@ -79,7 +79,7 @@ This file is the source-of-truth plan/status tracker for web work. Keep it updat
 - The UI sends `Accept-Language: en|ar` (or `?lang=`) so backend error and SMS responses match the selected language.
 - Use `purpose` values like `owner` and `staff` in OTP requests to tag sessions.
 - Dev OTP can be fixed via `Otp__FixedCode` (e.g. `000000`) for local testing.
-- CORS origins are controlled by `Cors__AllowedOrigins` (comma-separated), defaulting to localhost web/mobile ports.
+- CORS origins are controlled by `Cors__AllowedOrigins` (comma-separated), defaulting to localhost web/mobile ports. For LAN/mobile testing, add your IP (e.g. `http://192.168.1.10:5173`). You can also set `Cors__AllowAll=true` for local dev.
 - Owners can onboard businesses, manage staff, and view redemptions. Staff can record visits, redeem rewards, and edit customer profiles.
 - Visit cooldown is enforced server-side; the visit response always returns the current progress/reward status even when a visit is ignored.
 - Customer mobile number is optional and stored separately from the lookup phone number.

@@ -588,4 +588,11 @@ public static class AdminEndpoints
         var message = localizer.Translate(key, language);
         return Results.BadRequest(new { detail = message });
     }
+
+    private static IResult NotFound(HttpRequest request, LocalizationService localizer, string key)
+    {
+        var language = request.Query["lang"].ToString();
+        var message = localizer.Translate(key, language);
+        return Results.NotFound(new { detail = message });
+    }
 }
