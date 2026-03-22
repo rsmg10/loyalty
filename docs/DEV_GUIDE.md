@@ -22,6 +22,21 @@ Services:
 - MinIO Console: `http://localhost:9001`
 - Adminer (DB UI): `http://localhost:8080`
 
+Default dev OTP code: `000000` (from `Otp__FixedCode` in `backend-dev` service).
+
+## Role Walkthrough (Dev Seed)
+
+When the DB is empty, seed data is created automatically in dev mode.
+
+- Owner web flow: phone `+10000000001`, purpose `owner`, OTP `000000`
+- Staff web flow: phone `+10000000011`, purpose `staff`, OTP `000000`
+- Customer mobile flow: phone `+15550000001`, OTP `000000`, business ID `1`
+
+Platform admin flow:
+- Set `Reporting__AdminPhones` to include your phone number (e.g. `+10000000001`)
+- Restart backend-dev
+- Open web app and navigate to `/admin`
+
 ## Quick Start (Prod)
 
 Build + run production images:

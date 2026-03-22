@@ -13,6 +13,14 @@
       <button class="btn-primary" :disabled="authLoading" @click="verifyOtp">
         {{ authLoading ? $t('auth.verifying') : $t('auth.verify') }}
       </button>
+      <div class="rounded-xl border border-white/70 bg-white/60 p-3 text-xs text-dusk/75">
+        <p class="font-semibold text-dusk">{{ $t('auth.howToUse') }}</p>
+        <ul class="mt-2 space-y-1">
+          <li>{{ $t('auth.stepOne') }}</li>
+          <li>{{ $t('auth.stepTwo') }}</li>
+          <li>{{ $t('auth.stepThree') }}</li>
+        </ul>
+      </div>
       <p v-if="authMessage" :class="messageClass(authMessage.tone)">
         {{ authMessage.text }}
       </p>

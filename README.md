@@ -1,81 +1,62 @@
 # Loyalty Platform
 
-This repository contains the initial backend, web, and mobile (PWA) code scaffolding for the Loyalty Platform MVP.
+Backend + web staff console + mobile customer wallet for a loyalty MVP.
 
-## Structure
+## Quick Start (Recommended)
 
-- `backend/`: ASP.NET Core API implementing loyalty workflows and core data model.
-- `web/`: Web app placeholder for staff/admin flows.
-- `mobile/`: PWA placeholder for customer-facing views.
-- `docs/`: Project documentation.
+Start the full local stack (API + web + mobile + Postgres + MinIO):
 
-## Quick Start (Backend)
-
-```bash
-cd backend/Loyalty.Api
-dotnet restore
-dotnet run
-```
-
-## Developer Guide
-
-See `docs/DEV_GUIDE.md` for full local tooling and workflow details.
-
-## Docker (Dev + Prod)
-
-Dev profile (hot reload):
 ```bash
 docker compose --profile dev up --build
 ```
 
-Prod profile (built artifacts):
-```bash
-docker compose --profile prod up --build
-```
+When the DB is empty, seed data is created automatically in dev (`Seed__Enabled=true`).
 
-## Environment Template
+## Local URLs
 
-Copy `.env.example` to `.env` and adjust as needed for local development.
+- Web staff/admin app: `http://localhost:5173`
+- Mobile customer app: `http://localhost:5174`
+- API: `http://localhost:5000`
+- Adminer (DB UI): `http://localhost:8080`
+- MinIO: `http://localhost:9000` (console `http://localhost:9001`)
 
-## Adminer (DB UI)
+## First Test Flow (10 Minutes)
 
-Adminer is available in the dev profile at:
-```
-http://localhost:8080
-```
-Use server `postgres`, database `loyalty`, user `loyalty`, password `loyalty`.
+1. Web owner flow
+- Open `http://localhost:5173`
+- Login with `purpose=owner`, phone `+10000000001`, OTP `000000`
+- Owner can manage loyalty config, staff, redemptions, reports, and magic links
 
-## Migrations
+2. Web staff flow
+- Login with `purpose=staff`, phone `+10000000011`, OTP `000000`
+- Staff can issue stamps, redeem rewards, lookup customers, and update profiles
 
-Create a migration:
-```bash
-dotnet ef migrations add <Name> --project backend/Loyalty.Api/Loyalty.Api.csproj --output-dir Data/Migrations
-```
+3. Mobile customer flow
+- Open `http://localhost:5174`
+- Login with phone `+15550000001`, OTP `000000`
+- Enter business ID `1` (or use a QR magic link generated on web)
+- Load status/history; if not enrolled, use Join Program
 
-Apply migrations:
-```bash
-dotnet ef database update --project backend/Loyalty.Api/Loyalty.Api.csproj
-```
+4. Platform admin flow
+- Add admin phone(s) to `Reporting__AdminPhones` (for dev: in `docker-compose.yml` under `backend-dev`)
+- Restart backend service after changing env
+- Login on web with that phone, then open `/admin` for platform overview + vendor comparison + business/staff controls
 
-## Reset Dev DB
+## Reset + Reseed
 
 ```bash
 ./scripts/reset-dev-db.sh
+docker compose --profile dev up --build
 ```
 
-## Seed Dev Data
+## Structure
 
-Set `Seed__Enabled=true` when running the API (dev compose already sets this).
-```bash
-Seed__Enabled=true dotnet run --project backend/Loyalty.Api/Loyalty.Api.csproj
-```
+- `backend/`: ASP.NET Core API
+- `web/`: Vue web app (owner/staff/admin)
+- `mobile/`: Vue PWA (customer wallet)
+- `docs/`: dev and reporting docs
 
-Or use the helper script:
-```bash
-./scripts/seed-dev-data.sh
-```
-
-## Makefile shortcuts
+## Useful Commands
 
 ```bash
 make dev
@@ -85,8 +66,13 @@ make seed
 make migrate
 ```
 
-## Next Steps
+## Migrations
 
-- Add production SMS provider integration.
-- Add test coverage and CI.
-- Build reporting dashboards for vendors and platform admins.
+```bash
+dotnet ef migrations add <Name> --project backend/Loyalty.Api/Loyalty.Api.csproj --output-dir Data/Migrations
+dotnet ef database update --project backend/Loyalty.Api/Loyalty.Api.csproj
+```
+
+## More Detail
+
+See `docs/DEV_GUIDE.md`, `web/README.md`, and `mobile/README.md`.

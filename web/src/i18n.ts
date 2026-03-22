@@ -37,7 +37,20 @@ const messages = {
       sending: 'Sending...',
       verifying: 'Verifying...',
       otpSent: 'OTP sent. Check the console SMS in the backend logs.',
-      signedIn: 'Signed in successfully.'
+      signedIn: 'Signed in successfully.',
+      startHere: 'Start here',
+      setup: 'Setup',
+      devSetup: 'Dev startup',
+      webUrl: 'Web app',
+      mobileUrl: 'Mobile app',
+      apiUrl: 'API',
+      devOtpHint: 'Dev profile uses fixed OTP code 000000.',
+      roleFlows: 'Role flow checklist',
+      ownerFlow: 'Owner: sign in with purpose owner, onboard business, then configure loyalty and staff.',
+      staffFlow: 'Staff: sign in with purpose staff, pick a business, then run front-counter/customer-care actions.',
+      customerFlow: 'Customer: open mobile app or QR magic link, verify OTP, enter business ID, and view profile/progress.',
+      adminFlow:
+        'Admin: set Reporting__AdminPhones in backend env, sign in on web, open Admin Console for platform insights.'
     },
     onboarding: {
       title: 'Business onboarding',
@@ -144,7 +157,18 @@ const messages = {
       customerCare: 'Customer care',
       customerCareSubtitle: 'Lookup, profile updates, and membership joins.',
       ownerTools: 'Owner tools',
-      ownerToolsSubtitle: 'Program controls, staff, and reporting.'
+      ownerToolsSubtitle: 'Program controls, staff, and reporting.',
+      flowGuideTitle: 'Flow guide',
+      flowGuideChip: 'Start',
+      flowGuideSubtitle: 'Use this order when testing or training teams.',
+      flowOwnerTitle: '1) Owner setup',
+      flowOwnerBody: 'Create or update business profile, loyalty rules, media, and staff roster.',
+      flowStaffTitle: '2) Staff operations',
+      flowStaffBody: 'Issue stamps, redeem rewards, and update customer profiles from the counter.',
+      flowCustomerTitle: '3) Customer journey',
+      flowCustomerBody: 'Customer signs in on mobile, joins the program, and sees live progress/history.',
+      flowAdminTitle: '4) Platform admin',
+      flowAdminBody: 'Admin console shows cross-vendor overview, vendor comparison, and staff controls.'
     },
     cards: {
       visitEntry: 'Visit entry',
@@ -176,7 +200,6 @@ const messages = {
       prevPage: 'Previous',
       nextPage: 'Next',
       staffId: 'Staff ID (optional)',
-      rewardAvailable: 'Reward available',
       yes: 'Yes',
       no: 'No',
       transactionId: 'Transaction ID',
@@ -333,7 +356,11 @@ const messages = {
       generating: 'Generating...',
       magicLinkReady: 'Magic link ready',
       copyLink: 'Copy link',
-      magicLinkExpires: 'Expires'
+      magicLinkExpires: 'Expires',
+      noStaffYet: 'No staff yet. Add your first team member to activate staff operations.',
+      noRedemptionsYet: 'No redemptions yet. Once rewards are used they appear here.',
+      noVisitHistoryYet: 'No visit history yet for this customer.',
+      noStampHistoryYet: 'No stamp history yet for this customer.'
     },
     forms: {
       customerPhone: 'Customer phone',
@@ -430,7 +457,19 @@ const messages = {
       sending: 'جارٍ الإرسال...',
       verifying: 'جارٍ التحقق...',
       otpSent: 'تم إرسال الرمز. تحقق من سجل الرسائل في الخادم.',
-      signedIn: 'تم تسجيل الدخول بنجاح.'
+      signedIn: 'تم تسجيل الدخول بنجاح.',
+      startHere: 'ابدأ من هنا',
+      setup: 'الإعداد',
+      devSetup: 'تشغيل التطوير',
+      webUrl: 'تطبيق الويب',
+      mobileUrl: 'تطبيق الجوال',
+      apiUrl: 'واجهة API',
+      devOtpHint: 'بيئة التطوير تستخدم رمز OTP ثابت: 000000.',
+      roleFlows: 'مسارات الأدوار',
+      ownerFlow: 'المالك: يسجل بالدور مالك، ينشئ النشاط، ثم يضبط برنامج الولاء والموظفين.',
+      staffFlow: 'الموظف: يسجل بالدور موظف، يختار النشاط، ثم يستخدم واجهة الكاشير وخدمة العملاء.',
+      customerFlow: 'العميل: يفتح تطبيق الجوال أو رابط QR، يتحقق بالرمز، يدخل رقم النشاط ويعرض التقدم.',
+      adminFlow: 'مدير المنصة: اضبط Reporting__AdminPhones في إعدادات الخادم ثم افتح لوحة الإدارة من الويب.'
     },
     onboarding: {
       title: 'تهيئة النشاط',
@@ -537,7 +576,18 @@ const messages = {
       customerCare: 'خدمة العملاء',
       customerCareSubtitle: 'استعلام وتحديث ملف العميل والانضمام.',
       ownerTools: 'أدوات المالك',
-      ownerToolsSubtitle: 'البرنامج والموظفون والتقارير.'
+      ownerToolsSubtitle: 'البرنامج والموظفون والتقارير.',
+      flowGuideTitle: 'دليل المسار',
+      flowGuideChip: 'ابدأ',
+      flowGuideSubtitle: 'استخدم هذا الترتيب أثناء الاختبار أو تدريب الفريق.',
+      flowOwnerTitle: '1) إعداد المالك',
+      flowOwnerBody: 'إنشاء أو تحديث بيانات النشاط، قواعد الولاء، الوسائط، وفريق الموظفين.',
+      flowStaffTitle: '2) عمليات الموظفين',
+      flowStaffBody: 'إصدار الأختام، استبدال المكافآت، وتحديث ملفات العملاء من الكاشير.',
+      flowCustomerTitle: '3) رحلة العميل',
+      flowCustomerBody: 'يسجل العميل في الجوال، ينضم للبرنامج، ثم يرى التقدم والسجل مباشرة.',
+      flowAdminTitle: '4) إدارة المنصة',
+      flowAdminBody: 'لوحة الإدارة تعرض نظرة عامة ومقارنة الأنشطة والتحكم في الموظفين.'
     },
     cards: {
       visitEntry: 'تسجيل زيارة',
@@ -568,7 +618,6 @@ const messages = {
       prevPage: 'السابق',
       nextPage: 'التالي',
       staffId: 'رقم الموظف (اختياري)',
-      rewardAvailable: 'المكافأة متاحة',
       yes: 'نعم',
       no: 'لا',
       transactionId: 'رقم العملية',
@@ -725,7 +774,11 @@ const messages = {
       generating: 'جارٍ الإنشاء...',
       magicLinkReady: 'الرابط جاهز',
       copyLink: 'نسخ الرابط',
-      magicLinkExpires: 'ينتهي في'
+      magicLinkExpires: 'ينتهي في',
+      noStaffYet: 'لا يوجد موظفون بعد. أضف أول موظف لتفعيل تشغيل الفريق.',
+      noRedemptionsYet: 'لا توجد عمليات استبدال بعد. ستظهر هنا عند استخدام المكافآت.',
+      noVisitHistoryYet: 'لا يوجد سجل زيارات لهذا العميل بعد.',
+      noStampHistoryYet: 'لا يوجد سجل أختام لهذا العميل بعد.'
     },
     forms: {
       customerPhone: 'هاتف العميل',

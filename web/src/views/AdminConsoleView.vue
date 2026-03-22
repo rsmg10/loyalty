@@ -110,9 +110,17 @@
             :key="member.id"
             class="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-white/70 p-3 text-xs text-dusk/80"
           >
-            <div>
-              <p class="font-semibold text-dusk">{{ member.displayName }}</p>
-              <p class="text-dusk/70">{{ member.phoneNumber }}</p>
+            <div class="flex items-center gap-2.5">
+              <span
+                class="inline-flex h-8 w-8 items-center justify-center rounded-full border text-[11px] font-semibold"
+                :style="avatarStyle(member.phoneNumber)"
+              >
+                {{ initialsFromValue(member.displayName || member.phoneNumber) }}
+              </span>
+              <div>
+                <p class="font-semibold text-dusk">{{ member.displayName }}</p>
+                <p class="text-dusk/70">{{ member.phoneNumber }}</p>
+              </div>
             </div>
             <div class="flex items-center gap-2">
               <span class="chip">{{ member.active ? $t('admin.active') : $t('admin.inactive') }}</span>
@@ -122,6 +130,9 @@
             </div>
           </div>
         </div>
+        <p v-else-if="!staffLoading && businessDetail" class="rounded-xl bg-dusk/5 px-3 py-2 text-xs text-dusk/70">
+          {{ $t('cards.noStaffYet') }}
+        </p>
         <div class="rounded-xl border border-white/60 bg-white/70 p-3">
           <p class="text-xs font-semibold uppercase tracking-wider text-dusk/60">{{ $t('admin.addStaff') }}</p>
           <div class="mt-3 space-y-2">
@@ -199,6 +210,7 @@ import type {
 import AdminOverviewCard from '../components/admin/AdminOverviewCard.vue';
 import AdminVendorComparisonCard from '../components/admin/AdminVendorComparisonCard.vue';
 import { useI18n } from 'vue-i18n';
+import { avatarStyle, initialsFromValue } from '../lib/avatar';
 
 const router = useRouter();
 const session = useSessionStore();

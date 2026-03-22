@@ -40,6 +40,8 @@ This file is the source-of-truth plan/status tracker for web work. Keep it updat
 - [x] Business stats card (enrolled customers, stamps issued, rewards redeemed)
 - [x] Loyalty program fields (program name/description + stamp expiration days)
 - [x] Loyalty media upload (program icon + reward image)
+- [x] Guided startup + role flow hints (login/dashboard)
+- [x] Avatar/icon visual polish for staff, redemptions, customer history, and admin staff lists
 
 ## Sellability TODOs
 
@@ -81,6 +83,8 @@ This file is the source-of-truth plan/status tracker for web work. Keep it updat
 - Dev OTP can be fixed via `Otp__FixedCode` (e.g. `000000`) for local testing.
 - CORS origins are controlled by `Cors__AllowedOrigins` (comma-separated), defaulting to localhost web/mobile ports. For LAN/mobile testing, add your IP (e.g. `http://192.168.1.10:5173`). You can also set `Cors__AllowAll=true` for local dev.
 - Owners can onboard businesses, manage staff, and view redemptions. Staff can record visits, redeem rewards, and edit customer profiles.
+- Login now includes a startup checklist (dev command, URLs, OTP behavior, and role flow expectations).
+- Dashboard now includes a flow guide card (owner -> staff -> customer -> platform admin path).
 - Visit cooldown is enforced server-side; the visit response always returns the current progress/reward status even when a visit is ignored.
 - Customer mobile number is optional and stored separately from the lookup phone number.
 - Visits and redemptions automatically attach the staff member based on the logged-in session; no extra UI field is required.

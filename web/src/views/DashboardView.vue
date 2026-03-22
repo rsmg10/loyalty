@@ -37,6 +37,7 @@
 
       <section v-else class="space-y-6">
         <QuickActionsToolbar :is-owner="isOwner" @jump="jumpTo" />
+        <FlowGuideCard :is-owner="isOwner" @jump="jumpTo" />
 
         <SectionGroup
           section-id="front-counter"
@@ -309,6 +310,7 @@ import { useSessionStore } from '../stores/session';
 import BusinessContextCard from '../components/dashboard/BusinessContextCard.vue';
 import QuickActionsCard from '../components/dashboard/QuickActionsCard.vue';
 import QuickActionsToolbar from '../components/dashboard/QuickActionsToolbar.vue';
+import FlowGuideCard from '../components/dashboard/FlowGuideCard.vue';
 import SectionNavCard from '../components/dashboard/SectionNavCard.vue';
 import VisitEntryCard from '../components/dashboard/VisitEntryCard.vue';
 import StampIssueCard from '../components/dashboard/StampIssueCard.vue';

@@ -30,7 +30,11 @@ const messages = {
       sending: 'Sending...',
       verifying: 'Verifying...',
       otpSent: 'OTP sent.',
-      signedIn: 'Signed in.'
+      signedIn: 'Signed in.',
+      howToUse: 'How to use this wallet',
+      stepOne: '1) Ask staff for business ID or scan their QR magic link.',
+      stepTwo: '2) Verify your phone using OTP (dev code is 000000).',
+      stepThree: '3) Load status, then join the program if this is your first visit.'
     },
     wallet: {
       statusTitle: 'Your status',
@@ -49,7 +53,9 @@ const messages = {
       note: 'Note',
       stampExpiration: 'Stamp expiration',
       lastStamp: 'Last stamp',
-      rewardAvailableSince: 'Reward available since'
+      rewardAvailableSince: 'Reward available since',
+      noVisitHistoryYet: 'No visit history yet.',
+      noStampHistoryYet: 'No stamp history yet.'
     },
     forms: {
       businessId: 'Business ID',
@@ -96,7 +102,11 @@ const messages = {
       sending: 'جارٍ الإرسال...',
       verifying: 'جارٍ التحقق...',
       otpSent: 'تم إرسال الرمز.',
-      signedIn: 'تم تسجيل الدخول.'
+      signedIn: 'تم تسجيل الدخول.',
+      howToUse: 'طريقة استخدام المحفظة',
+      stepOne: '1) اطلب رقم النشاط من الموظف أو امسح رمز QR الخاص به.',
+      stepTwo: '2) تحقق من رقم هاتفك عبر OTP (رمز التطوير 000000).',
+      stepThree: '3) حمّل الحالة ثم انضم للبرنامج إذا كانت هذه زيارتك الأولى.'
     },
     wallet: {
       statusTitle: 'حالتك',
@@ -115,7 +125,9 @@ const messages = {
       note: 'ملاحظة',
       stampExpiration: 'انتهاء الأختام',
       lastStamp: 'آخر ختم',
-      rewardAvailableSince: 'المكافأة متاحة منذ'
+      rewardAvailableSince: 'المكافأة متاحة منذ',
+      noVisitHistoryYet: 'لا يوجد سجل زيارات بعد.',
+      noStampHistoryYet: 'لا يوجد سجل أختام بعد.'
     },
     forms: {
       businessId: 'رقم النشاط',

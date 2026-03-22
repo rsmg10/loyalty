@@ -26,17 +26,26 @@
           </button>
         </div>
         <div v-if="statusResult" class="rounded-xl bg-cream/70 p-4 text-sm text-dusk">
-          <p class="font-semibold">{{ statusResult.businessName }}</p>
+          <div class="flex items-center gap-3">
+            <img
+              v-if="statusResult.programIconUrl"
+              :src="statusResult.programIconUrl"
+              alt="Program icon"
+              class="h-14 w-14 rounded-2xl border border-white/70 object-cover"
+            />
+            <span
+              v-else
+              class="inline-flex h-14 w-14 items-center justify-center rounded-2xl border text-sm font-semibold"
+              :style="avatarStyle(statusResult.businessName)"
+            >
+              {{ initialsFromValue(statusResult.businessName, 'BP') }}
+            </span>
+            <p class="font-semibold">{{ statusResult.businessName }}</p>
+          </div>
           <p class="text-dusk/70">{{ $t('wallet.program') }}: {{ statusResult.programName }}</p>
           <p v-if="statusResult.programDescription" class="text-dusk/70">
             {{ statusResult.programDescription }}
           </p>
-          <img
-            v-if="statusResult.programIconUrl"
-            :src="statusResult.programIconUrl"
-            alt="Program icon"
-            class="mt-2 h-16 w-16 rounded-2xl object-cover"
-          />
           <p class="text-dusk/70">{{ $t('wallet.reward') }}: {{ statusResult.rewardName }}</p>
           <img
             v-if="statusResult.rewardImageUrl"
@@ -76,11 +85,29 @@
           {{ historyLoading ? $t('wallet.loading') : $t('wallet.loadHistory') }}
         </button>
         <ul v-if="history.length" class="space-y-2 text-xs text-dusk/70">
-          <li v-for="entry in history" :key="entry.createdAt">
-            {{ new Date(entry.createdAt).toLocaleString() }} · {{ entry.quantity }} stamp(s)
-            <span v-if="entry.reason">· {{ entry.reason }}</span>
+          <li
+            v-for="entry in history"
+            :key="entry.createdAt"
+            class="flex items-center gap-2 rounded-xl border border-white/70 bg-white/65 p-2.5"
+          >
+            <span
+              class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-[10px] font-semibold"
+              :style="avatarStyle(entry.reason || String(entry.quantity))"
+            >
+              {{ initialsFromValue(entry.reason || 'visit', 'VT') }}
+            </span>
+            <div>
+              <p class="text-[11px] text-dusk">{{ new Date(entry.createdAt).toLocaleString() }}</p>
+              <p class="text-[11px] text-dusk/70">
+                {{ entry.quantity }} stamp(s)
+                <span v-if="entry.reason">· {{ entry.reason }}</span>
+              </p>
+            </div>
           </li>
         </ul>
+        <p v-else-if="!historyLoading" class="rounded-xl bg-night/5 px-3 py-2 text-xs text-night/70">
+          {{ $t('wallet.noVisitHistoryYet') }}
+        </p>
         <p v-if="historyMessage" :class="messageClass(historyMessage.tone)">
           {{ historyMessage.text }}
         </p>
@@ -97,11 +124,28 @@
           {{ stampHistoryLoading ? $t('wallet.loading') : $t('wallet.loadStampHistory') }}
         </button>
         <ul v-if="stampHistory.length" class="space-y-2 text-xs text-dusk/70">
-          <li v-for="entry in stampHistory" :key="entry.id">
-            {{ new Date(entry.issuedAt).toLocaleString() }} · {{ entry.quantity }} stamp(s) ·
-            {{ entry.reason }} · {{ entry.issuedByPhone }}
+          <li
+            v-for="entry in stampHistory"
+            :key="entry.id"
+            class="flex items-center gap-2 rounded-xl border border-white/70 bg-white/65 p-2.5"
+          >
+            <span
+              class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-[10px] font-semibold"
+              :style="avatarStyle(entry.issuedByPhone)"
+            >
+              {{ initialsFromValue(entry.issuedByPhone, 'ST') }}
+            </span>
+            <div>
+              <p class="text-[11px] text-dusk">{{ new Date(entry.issuedAt).toLocaleString() }}</p>
+              <p class="text-[11px] text-dusk/70">
+                {{ entry.quantity }} stamp(s) · {{ entry.reason }} · {{ entry.issuedByPhone }}
+              </p>
+            </div>
           </li>
         </ul>
+        <p v-else-if="!stampHistoryLoading" class="rounded-xl bg-night/5 px-3 py-2 text-xs text-night/70">
+          {{ $t('wallet.noStampHistoryYet') }}
+        </p>
         <p v-if="stampHistoryMessage" :class="messageClass(stampHistoryMessage.tone)">
           {{ stampHistoryMessage.text }}
         </p>
@@ -123,6 +167,7 @@ import type { CustomerStatusResponse, StampTransactionItem, VisitHistoryItem } f
 import { usePreferencesStore } from '../stores/preferences';
 import { useSessionStore } from '../stores/session';
 import { useI18n } from 'vue-i18n';
+import { avatarStyle, initialsFromValue } from '../lib/avatar';
 
 type MessageTone = 'success' | 'error' | 'info';
 type Message = { tone: MessageTone; text: string };

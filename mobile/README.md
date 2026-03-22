@@ -14,6 +14,8 @@ This file is the source-of-truth plan/status tracker for mobile/PWA work. Keep i
 - [x] Show program name/description + stamp expiration info
 - [x] Stamp transaction history (optional detailed audit)
 - [x] Show program icon + reward image when provided
+- [x] Login guidance checklist (how to start + join flow)
+- [x] Avatar fallback + richer visual history rows
 - [ ] Platform admin console is web-only (no mobile scope)
 
 ## Sellability TODOs (Platform)
@@ -47,6 +49,7 @@ This file is the source-of-truth plan/status tracker for mobile/PWA work. Keep i
 - CORS origins are controlled by `Cors__AllowedOrigins` (comma-separated), defaulting to localhost web/mobile ports. For LAN/mobile testing, add your IP (e.g. `http://192.168.1.10:5174`). You can also set `Cors__AllowAll=true` for local dev.
 - The app is read-only: show loyalty status and visit history only.
 - Customers can self-signup after OTP login using `/businesses/{businessId}/self-signup`.
+- Login now includes a quick usage checklist (business ID / QR flow + OTP expectations).
 - Status data comes from the loyalty cycle snapshot, so the reward text stays consistent even if the business updates its config.
 - Status/history endpoints require the token phone number to match the `phoneNumber` in the URL.
 - Visit/redemption staff tracking happens in the backend; no customer-side input is needed.
