@@ -12,6 +12,12 @@ docker compose --profile dev up --build
 
 When the DB is empty, seed data is created automatically in dev (`Seed__Enabled=true`).
 
+## Step-by-Step Onboarding Guide
+
+For complete click-by-click setup (shops, staff, customers, admins), use:
+
+- `docs/START_HERE.md`
+
 ## Local URLs
 
 - Web staff/admin app: `http://localhost:5173`

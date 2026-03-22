@@ -2,6 +2,8 @@
 
 This guide explains the local tooling added for this repo and how to run the system in dev or prod containers.
 
+If you want end-to-end onboarding steps by role, read `docs/START_HERE.md`.
+
 ## Prerequisites
 
 - Docker + Docker Compose v2
