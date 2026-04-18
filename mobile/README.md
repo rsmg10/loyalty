@@ -51,6 +51,7 @@ This file is the source-of-truth plan/status tracker for mobile/PWA work. Keep i
 - Target flow (see `docs/USER_STORIES.md`) keeps mobile strictly customer-facing while staff moves to username/password on web.
 - Web login now uses role-first auth: owner OTP and staff username/password.
 - Owner staff management now uses `/businesses/{businessId}/staff-users`; legacy owner `/staff` endpoints were removed.
+- Owner loyalty setup and magic-link generation now run from web owner settings route `/owner/settings`.
 - Platform admin staff management on web now uses `/admin/businesses/{businessId}/staff-users` (credential staff users).
 - Dev OTP can be fixed via `Otp__FixedCode` (e.g. `000000`) for local testing.
 - CORS origins are controlled by `Cors__AllowedOrigins` (comma-separated), defaulting to localhost web/mobile ports. For LAN/mobile testing, add your IP (e.g. `http://192.168.1.10:5174`). You can also set `Cors__AllowAll=true` for local dev.

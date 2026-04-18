@@ -97,6 +97,11 @@ Owner reporting flow:
 - Select owner business
 - Load overview, customer activity, issuance, redemption, retention, and staff activity reports
 
+Owner settings flow:
+- Open `http://localhost:5173/owner/settings`
+- Select owner business
+- Update loyalty config/media and generate customer magic links
+
 ## 7) Enable and use platform admin
 
 Admin access is controlled by `Reporting__AdminPhones`.
@@ -125,9 +130,9 @@ Admin can:
 
 ## 8) Magic link / QR onboarding for customers
 
-1. Owner or staff logs into web.
-2. In **Owner tools**, open **Magic link** card.
-3. Generate link and copy/share QR.
+1. Owner logs into web.
+2. Open `http://localhost:5173/owner/settings`.
+3. In **Magic link** card, generate link and copy/share QR.
 4. Customer opens link on mobile; business ID is auto-filled.
 
 ## 9) Common first-time issues

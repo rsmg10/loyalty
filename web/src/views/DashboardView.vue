@@ -18,6 +18,7 @@
         :is-owner="isOwner"
         :redemptions-loading="redemptionsLoading"
         @open-user-management="openOwnerUsers"
+        @open-settings="openOwnerSettings"
         @open-reports="openOwnerReports"
         @load-redemptions="loadRedemptions"
       />
@@ -41,12 +42,14 @@
           :is-owner="isOwner"
           @jump="jumpTo"
           @open-user-management="openOwnerUsers"
+          @open-settings="openOwnerSettings"
           @open-reports="openOwnerReports"
         />
         <FlowGuideCard
           :is-owner="isOwner"
           @jump="jumpTo"
           @open-user-management="openOwnerUsers"
+          @open-settings="openOwnerSettings"
           @open-reports="openOwnerReports"
         />
 
@@ -204,33 +207,17 @@
               </button>
             </div>
           </section>
-          <LoyaltyConfigCard
-            :config="loyaltyConfig"
-            :loading="loyaltyLoading"
-            :message="loyaltyMessage"
-            @update:program-name="(value) => (loyaltyConfig.programName = value)"
-            @update:program-description="(value) => (loyaltyConfig.programDescription = value)"
-            @update:reward-name="(value) => (loyaltyConfig.rewardName = value)"
-            @update:visit-threshold="(value) => (loyaltyConfig.visitThreshold = value)"
-            @update:optional-note="(value) => (loyaltyConfig.optionalNote = value)"
-            @update:stamp-expiration-days="(value) => (loyaltyConfig.stampExpirationDays = value)"
-            @program-icon-change="onProgramIconChange"
-            @reward-image-change="onRewardImageChange"
-            @upload-program-icon="uploadProgramIcon"
-            @upload-reward-image="uploadRewardImage"
-            @save="saveLoyaltyConfig"
-            @refresh="loadLoyaltyConfig"
-          />
-          <MagicLinkCard
-            :link="magicLink?.url || null"
-            :expires-at="magicLink?.expiresAt || null"
-            :business-name="magicLink?.businessName || null"
-            :qr-data-url="magicLinkQr"
-            :loading="magicLinkLoading"
-            :message="magicLinkMessage"
-            @generate="generateMagicLink"
-            @copy="copyMagicLink"
-          />
+          <section class="glass-card animate-rise border-dusk/10">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 class="section-title">{{ $t('dashboard.settingsTitle') }}</h2>
+                <p class="mt-1 text-sm text-dusk/70">{{ $t('dashboard.settingsSubtitle') }}</p>
+              </div>
+              <button class="btn-primary" @click="openOwnerSettings">
+                {{ $t('dashboard.openSettings') }}
+              </button>
+            </div>
+          </section>
           <RedemptionsCard
             :items="redemptions"
             :loading="redemptionsLoading"
@@ -293,7 +280,6 @@ import { useI18n } from 'vue-i18n';
 import type {
   BusinessStatsResponse,
   CustomerStatusResponse,
-  MagicLinkResponse,
   RedemptionResponse,
   RedemptionSummary,
   StampIssueResponse,
@@ -312,12 +298,9 @@ import RedemptionCard from '../components/dashboard/RedemptionCard.vue';
 import CustomerLookupCard from '../components/dashboard/CustomerLookupCard.vue';
 import CustomerProfileCard from '../components/dashboard/CustomerProfileCard.vue';
 import MembershipCard from '../components/dashboard/MembershipCard.vue';
-import LoyaltyConfigCard from '../components/dashboard/LoyaltyConfigCard.vue';
 import RedemptionsCard from '../components/dashboard/RedemptionsCard.vue';
 import StatsCard from '../components/dashboard/StatsCard.vue';
 import SectionGroup from '../components/dashboard/SectionGroup.vue';
-import MagicLinkCard from '../components/dashboard/MagicLinkCard.vue';
-import QRCode from 'qrcode';
 
 type BusinessOption = {
   id: number;
@@ -375,24 +358,6 @@ const profile = reactive({
 const profileLoading = ref(false);
 const profileMessage = ref<Message | null>(null);
 
-const loyaltyConfig = reactive({
-  programName: '',
-  programDescription: '',
-  rewardName: '',
-  programIconUrl: '',
-  rewardImageUrl: '',
-  visitThreshold: 9,
-  optionalNote: '',
-  stampExpirationDays: '' as string | number
-});
-const loyaltyLoading = ref(false);
-const loyaltyMessage = ref<Message | null>(null);
-
-const media = reactive({
-  programIconFile: null as File | null,
-  rewardImageFile: null as File | null
-});
-
 const redemptions = ref<RedemptionSummary[]>([]);
 const redemptionsLoading = ref(false);
 const redemptionsMessage = ref<Message | null>(null);
@@ -406,11 +371,6 @@ const membershipMessage = ref<Message | null>(null);
 const stats = ref<BusinessStatsResponse | null>(null);
 const statsLoading = ref(false);
 const statsMessage = ref<Message | null>(null);
-
-const magicLink = ref<MagicLinkResponse | null>(null);
-const magicLinkQr = ref<string | null>(null);
-const magicLinkLoading = ref(false);
-const magicLinkMessage = ref<Message | null>(null);
 
 const activeSection = ref('front-counter');
 const quickActionsOpen = ref(false);
@@ -473,19 +433,6 @@ watch(
   }
 );
 
-watch(
-  () => activeBusiness.value?.id,
-  async (value) => {
-    magicLink.value = null;
-    magicLinkQr.value = null;
-    magicLinkMessage.value = null;
-
-    if (value && isOwner.value) {
-      await loadLoyaltyConfig();
-    }
-  }
-);
-
 onMounted(async () => {
   if (session.token && !session.meLoaded) {
     await session.fetchMe();
@@ -519,6 +466,13 @@ function openOwnerUsers() {
     return;
   }
   router.push({ name: 'owner-users' });
+}
+
+function openOwnerSettings() {
+  if (!isOwner.value) {
+    return;
+  }
+  router.push({ name: 'owner-settings' });
 }
 
 function openOwnerReports() {
@@ -680,56 +634,6 @@ async function loadRedemptions() {
   }
 }
 
-async function loadLoyaltyConfig() {
-  if (!activeBusiness.value) {
-    setMessage(loyaltyMessage, 'error', t('messages.selectBusiness'));
-    return;
-  }
-  loyaltyLoading.value = true;
-  try {
-    const data = await api.value.getBusiness(activeBusiness.value.id);
-    loyaltyConfig.programName = data.programName || '';
-    loyaltyConfig.programDescription = data.programDescription || '';
-    loyaltyConfig.programIconUrl = data.programIconUrl || '';
-    loyaltyConfig.rewardName = data.rewardName || '';
-    loyaltyConfig.rewardImageUrl = data.rewardImageUrl || '';
-    loyaltyConfig.visitThreshold = data.visitThreshold || 1;
-    loyaltyConfig.optionalNote = data.optionalNote || '';
-    loyaltyConfig.stampExpirationDays = data.stampExpirationDays ?? '';
-    setMessage(loyaltyMessage, 'success', t('messages.configLoaded'));
-  } catch (error) {
-    setMessage(loyaltyMessage, 'error', getErrorMessage(error));
-  } finally {
-    loyaltyLoading.value = false;
-  }
-}
-
-async function saveLoyaltyConfig() {
-  if (!activeBusiness.value) {
-    setMessage(loyaltyMessage, 'error', t('messages.selectBusiness'));
-    return;
-  }
-  if (!loyaltyConfig.programName.trim()) {
-    setMessage(loyaltyMessage, 'error', t('messages.programNameRequired'));
-    return;
-  }
-  loyaltyLoading.value = true;
-  try {
-    await api.value.updateLoyaltyConfig(activeBusiness.value.id, {
-      programName: loyaltyConfig.programName,
-      programDescription: loyaltyConfig.programDescription,
-      rewardName: loyaltyConfig.rewardName,
-      visitThreshold: loyaltyConfig.visitThreshold,
-      optionalNote: loyaltyConfig.optionalNote,
-      stampExpirationDays: loyaltyConfig.stampExpirationDays || null
-    });
-    setMessage(loyaltyMessage, 'success', t('messages.configUpdated'));
-  } catch (error) {
-    setMessage(loyaltyMessage, 'error', getErrorMessage(error));
-  } finally {
-    loyaltyLoading.value = false;
-  }
-}
 
 async function issueStamps() {
   if (!activeBusiness.value) {
@@ -800,93 +704,4 @@ async function loadStats() {
   }
 }
 
-async function generateMagicLink() {
-  if (!activeBusiness.value) {
-    setMessage(magicLinkMessage, 'error', t('messages.selectBusiness'));
-    return;
-  }
-
-  magicLinkLoading.value = true;
-  try {
-    const data = await api.value.createMagicLink(activeBusiness.value.id);
-    magicLink.value = data;
-    magicLinkQr.value = await QRCode.toDataURL(data.url, { width: 240, margin: 1 });
-    setMessage(magicLinkMessage, 'success', t('messages.magicLinkCreated'));
-  } catch (error) {
-    setMessage(magicLinkMessage, 'error', getErrorMessage(error));
-  } finally {
-    magicLinkLoading.value = false;
-  }
-}
-
-async function copyMagicLink() {
-  if (!magicLink.value?.url) {
-    return;
-  }
-
-  try {
-    await navigator.clipboard.writeText(magicLink.value.url);
-    setMessage(magicLinkMessage, 'success', t('messages.magicLinkCopied'));
-  } catch (error) {
-    setMessage(magicLinkMessage, 'error', getErrorMessage(error));
-  }
-}
-
-function onProgramIconChange(event: Event) {
-  const target = event.target as HTMLInputElement;
-  media.programIconFile = target.files?.[0] ?? null;
-}
-
-function onRewardImageChange(event: Event) {
-  const target = event.target as HTMLInputElement;
-  media.rewardImageFile = target.files?.[0] ?? null;
-}
-
-async function uploadProgramIcon() {
-  if (!activeBusiness.value) {
-    setMessage(loyaltyMessage, 'error', t('messages.selectBusiness'));
-    return;
-  }
-  if (!media.programIconFile) {
-    setMessage(loyaltyMessage, 'error', t('messages.imageRequired'));
-    return;
-  }
-  loyaltyLoading.value = true;
-  try {
-    const formData = new FormData();
-    formData.append('kind', 'program_icon');
-    formData.append('file', media.programIconFile);
-    const data = await api.value.uploadMedia(activeBusiness.value.id, formData);
-    loyaltyConfig.programIconUrl = data.url;
-    setMessage(loyaltyMessage, 'success', t('messages.programIconUploaded'));
-  } catch (error) {
-    setMessage(loyaltyMessage, 'error', getErrorMessage(error));
-  } finally {
-    loyaltyLoading.value = false;
-  }
-}
-
-async function uploadRewardImage() {
-  if (!activeBusiness.value) {
-    setMessage(loyaltyMessage, 'error', t('messages.selectBusiness'));
-    return;
-  }
-  if (!media.rewardImageFile) {
-    setMessage(loyaltyMessage, 'error', t('messages.imageRequired'));
-    return;
-  }
-  loyaltyLoading.value = true;
-  try {
-    const formData = new FormData();
-    formData.append('kind', 'reward_image');
-    formData.append('file', media.rewardImageFile);
-    const data = await api.value.uploadMedia(activeBusiness.value.id, formData);
-    loyaltyConfig.rewardImageUrl = data.url;
-    setMessage(loyaltyMessage, 'success', t('messages.rewardImageUploaded'));
-  } catch (error) {
-    setMessage(loyaltyMessage, 'error', getErrorMessage(error));
-  } finally {
-    loyaltyLoading.value = false;
-  }
-}
 </script>

@@ -9,6 +9,7 @@
         <button class="btn-ghost" @click="$emit('jump', 'front-counter')">{{ $t('dashboard.frontCounter') }}</button>
         <button class="btn-ghost" @click="$emit('jump', 'customer-care')">{{ $t('dashboard.customerCare') }}</button>
         <button v-if="isOwner" class="btn-ghost" @click="$emit('open-user-management')">{{ $t('dashboard.openUserManagement') }}</button>
+        <button v-if="isOwner" class="btn-ghost" @click="$emit('open-settings')">{{ $t('dashboard.openSettings') }}</button>
         <button v-if="isOwner" class="btn-ghost" @click="$emit('open-reports')">{{ $t('dashboard.openReports') }}</button>
         <button v-if="isOwner" class="btn-ghost" @click="$emit('jump', 'owner-tools')">{{ $t('dashboard.ownerTools') }}</button>
       </div>
@@ -24,6 +25,7 @@ defineProps<{
 defineEmits<{
   (e: 'jump', sectionId: string): void;
   (e: 'open-user-management'): void;
+  (e: 'open-settings'): void;
   (e: 'open-reports'): void;
 }>();
 </script>

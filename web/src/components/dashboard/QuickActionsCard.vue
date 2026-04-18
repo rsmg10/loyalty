@@ -8,6 +8,9 @@
       <button v-if="isOwner" class="btn-ghost w-full" @click="$emit('open-user-management')">
         {{ $t('dashboard.openUserManagement') }}
       </button>
+      <button v-if="isOwner" class="btn-ghost w-full" @click="$emit('open-settings')">
+        {{ $t('dashboard.openSettings') }}
+      </button>
       <button v-if="isOwner" class="btn-ghost w-full" @click="$emit('open-reports')">
         {{ $t('dashboard.openReports') }}
       </button>
@@ -31,6 +34,7 @@ defineProps<{
 
 defineEmits<{
   (e: 'open-user-management'): void;
+  (e: 'open-settings'): void;
   (e: 'open-reports'): void;
   (e: 'load-redemptions'): void;
 }>();
