@@ -57,6 +57,9 @@ public static class SeedData
         db.LoyaltyConfigs.AddRange(cafeConfig, dinerConfig);
         await db.SaveChangesAsync();
 
+        var (linaHash, linaSalt) = PasswordHasher.Hash("staff1234");
+        var (omarHash, omarSalt) = PasswordHasher.Hash("staff1234");
+
         var staff = new[]
         {
             new Staff
@@ -64,6 +67,10 @@ public static class SeedData
                 BusinessId = cafe.Id,
                 DisplayName = "Lina",
                 PhoneNumber = "+10000000011",
+                Username = "lina.cafe",
+                NormalizedUsername = "lina.cafe",
+                PasswordHash = linaHash,
+                PasswordSalt = linaSalt,
                 Active = true,
             },
             new Staff
@@ -71,6 +78,10 @@ public static class SeedData
                 BusinessId = diner.Id,
                 DisplayName = "Omar",
                 PhoneNumber = "+10000000012",
+                Username = "omar.diner",
+                NormalizedUsername = "omar.diner",
+                PasswordHash = omarHash,
+                PasswordSalt = omarSalt,
                 Active = true,
             },
         };

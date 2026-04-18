@@ -130,17 +130,20 @@
             <div class="flex items-center gap-2.5">
               <span
                 class="inline-flex h-8 w-8 items-center justify-center rounded-full border text-[11px] font-semibold"
-                :style="avatarStyle(member.phoneNumber)"
+                :style="avatarStyle(member.username)"
               >
-                {{ initialsFromValue(member.displayName || member.phoneNumber) }}
+                {{ initialsFromValue(member.displayName || member.username) }}
               </span>
               <div>
                 <p class="font-semibold text-dusk">{{ member.displayName }}</p>
-                <p class="text-dusk/70">{{ member.phoneNumber }}</p>
+                <p class="text-dusk/70">@{{ member.username }}</p>
               </div>
             </div>
             <div class="flex items-center gap-2">
               <span class="chip">{{ member.active ? $t('admin.active') : $t('admin.inactive') }}</span>
+              <button class="btn-ghost" @click="promptAdminStaffPasswordReset(member.id, member.username)">
+                {{ $t('cards.resetPassword') }}
+              </button>
               <button class="btn-ghost" @click="toggleStaff(member)">
                 {{ member.active ? $t('admin.deactivateStaff') : $t('admin.activateStaff') }}
               </button>
@@ -154,7 +157,8 @@
           <p class="text-xs font-semibold uppercase tracking-wider text-dusk/60">{{ $t('admin.addStaff') }}</p>
           <div class="mt-3 space-y-2">
             <input v-model="staffForm.displayName" class="input" :placeholder="$t('admin.staffName')" />
-            <input v-model="staffForm.phoneNumber" class="input" :placeholder="$t('admin.staffPhone')" />
+            <input v-model="staffForm.username" class="input" :placeholder="$t('forms.username')" />
+            <input v-model="staffForm.password" class="input" type="password" :placeholder="$t('forms.password')" />
             <button class="btn-primary w-full" :disabled="staffSaving || !businessDetail" @click="addAdminStaff">
               {{ staffSaving ? $t('cards.loading') : $t('admin.addStaff') }}
             </button>
@@ -222,7 +226,7 @@ import type {
   AdminBusinessUpdate,
   PagedResponse,
   PlatformOverviewReport,
-  StaffResponse,
+  StaffUserResponse,
   VendorComparisonReport
 } from '../lib/types';
 import AdminOverviewCard from '../components/admin/AdminOverviewCard.vue';
@@ -282,13 +286,14 @@ const createForm = reactive({
 const createLoading = ref(false);
 const createMessage = ref<Message | null>(null);
 
-const staffList = ref<StaffResponse[]>([]);
+const staffList = ref<StaffUserResponse[]>([]);
 const staffLoading = ref(false);
 const staffSaving = ref(false);
 const staffMessage = ref<Message | null>(null);
 const staffForm = reactive({
   displayName: '',
-  phoneNumber: ''
+  username: '',
+  password: ''
 });
 
 watch(
@@ -386,7 +391,7 @@ async function loadAdminStaff(businessId?: number) {
   }
   staffLoading.value = true;
   try {
-    staffList.value = await api.getAdminStaff(id);
+    staffList.value = await api.getAdminStaffUsers(id);
     setMessage(staffMessage, 'success', t('messages.adminStaffLoaded'));
   } catch (error) {
     setMessage(staffMessage, 'error', getErrorMessage(error));
@@ -483,19 +488,21 @@ async function addAdminStaff() {
   if (!id) {
     return;
   }
-  if (!staffForm.displayName.trim() || !staffForm.phoneNumber.trim()) {
+  if (!staffForm.displayName.trim() || !staffForm.username.trim() || !staffForm.password.trim()) {
     setMessage(staffMessage, 'error', t('messages.adminStaffRequired'));
     return;
   }
 
   staffSaving.value = true;
   try {
-    await api.addAdminStaff(id, {
+    await api.addAdminStaffUser(id, {
       displayName: staffForm.displayName,
-      phoneNumber: staffForm.phoneNumber
+      username: staffForm.username,
+      password: staffForm.password
     });
     staffForm.displayName = '';
-    staffForm.phoneNumber = '';
+    staffForm.username = '';
+    staffForm.password = '';
     await loadAdminStaff();
     setMessage(staffMessage, 'success', t('messages.adminStaffAdded'));
   } catch (error) {
@@ -505,16 +512,38 @@ async function addAdminStaff() {
   }
 }
 
-async function toggleStaff(member: StaffResponse) {
+async function toggleStaff(member: StaffUserResponse) {
   const id = businessDetail.value?.id;
   if (!id) {
     return;
   }
   staffSaving.value = true;
   try {
-    await api.updateAdminStaff(id, member.id, { active: !member.active });
+    await api.setAdminStaffUserStatus(id, member.id, !member.active);
     await loadAdminStaff();
     setMessage(staffMessage, 'success', t('messages.adminStaffUpdated'));
+  } catch (error) {
+    setMessage(staffMessage, 'error', getErrorMessage(error));
+  } finally {
+    staffSaving.value = false;
+  }
+}
+
+async function promptAdminStaffPasswordReset(staffId: number, username: string) {
+  const id = businessDetail.value?.id;
+  if (!id) {
+    return;
+  }
+
+  const nextPassword = window.prompt(t('messages.staffPasswordPrompt', { username }), '');
+  if (!nextPassword || !nextPassword.trim()) {
+    return;
+  }
+
+  staffSaving.value = true;
+  try {
+    await api.resetAdminStaffUserPassword(id, staffId, nextPassword.trim());
+    setMessage(staffMessage, 'success', t('messages.adminStaffPasswordReset'));
   } catch (error) {
     setMessage(staffMessage, 'error', getErrorMessage(error));
   } finally {

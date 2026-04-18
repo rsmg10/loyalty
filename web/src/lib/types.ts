@@ -49,10 +49,10 @@ export type VisitHistoryItem = {
   reason?: string | null;
 };
 
-export type StaffResponse = {
+export type StaffUserResponse = {
   id: number;
   displayName: string;
-  phoneNumber: string;
+  username: string;
   active: boolean;
   createdAt: string;
 };

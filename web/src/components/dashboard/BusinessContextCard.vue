@@ -8,7 +8,14 @@
       <label class="text-xs font-semibold uppercase tracking-wide text-dusk/70">
         {{ $t('dashboard.activeBusiness') }}
       </label>
-      <select class="input" :value="selectedBusiness" @change="onSelect">
+      <input
+        v-if="lockBusinessSelection"
+        class="input"
+        type="text"
+        :value="selectedBusinessLabel"
+        readonly
+      />
+      <select v-else class="input" :value="selectedBusiness" @change="onSelect">
         <option value="">{{ $t('dashboard.pickBusiness') }}</option>
         <option v-for="option in businessOptions" :key="option.id" :value="option.id">
           {{ option.name }} ({{ roleLabel(option.role) }})
@@ -46,6 +53,7 @@ const props = defineProps<{
   purpose: string;
   ownerCount: number;
   staffCount: number;
+  lockBusinessSelection: boolean;
 }>();
 
 const { t } = useI18n();
@@ -61,6 +69,15 @@ const purposeLabel = computed(() => {
     return t('auth.purposeCustomer');
   }
   return props.purpose;
+});
+
+const selectedBusinessLabel = computed(() => {
+  if (!props.selectedBusiness) {
+    return t('dashboard.pickBusiness');
+  }
+
+  const selected = props.businessOptions.find((item) => item.id === Number(props.selectedBusiness));
+  return selected ? `${selected.name} (${roleLabel(selected.role)})` : t('dashboard.pickBusiness');
 });
 
 function roleLabel(role: BusinessOption['role']) {

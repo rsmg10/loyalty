@@ -5,7 +5,7 @@
       <span class="chip">{{ $t('dashboard.shortcuts') }}</span>
     </div>
     <div class="mt-4 space-y-2">
-      <button class="btn-ghost w-full" @click="$emit('load-staff')" :disabled="staffLoading">
+      <button v-if="isOwner" class="btn-ghost w-full" @click="$emit('load-staff')" :disabled="staffLoading">
         {{ $t('dashboard.loadStaff') }}
       </button>
       <button

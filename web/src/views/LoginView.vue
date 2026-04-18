@@ -2,14 +2,21 @@
   <main class="mx-auto grid w-full max-w-5xl gap-6 px-6 lg:grid-cols-[380px_1fr]">
     <!-- Auth card -->
     <section class="glass-card animate-rise">
-      <!-- Step 1: Phone + role -->
+      <!-- Step 1: Role-specific auth -->
       <template v-if="step === 1">
         <div class="flex items-center justify-between">
           <h2 class="section-title">{{ $t('auth.signIn') }}</h2>
-          <span class="chip">{{ $t('auth.otp') }}</span>
+          <span class="chip">{{ isOwnerLogin ? $t('auth.otp') : $t('auth.credentials') }}</span>
         </div>
         <div class="mt-4 space-y-4">
           <div>
+            <label class="field-label">{{ $t('auth.role') }}</label>
+            <select v-model="auth.purpose" class="input">
+              <option value="owner">{{ $t('auth.purposeOwner') }}</option>
+              <option value="staff">{{ $t('auth.purposeStaff') }}</option>
+            </select>
+          </div>
+          <div v-if="isOwnerLogin">
             <label class="field-label">{{ $t('auth.phone') }}</label>
             <input
               v-model="auth.phone"
@@ -19,19 +26,34 @@
               autocomplete="tel"
             />
           </div>
-          <div>
-            <label class="field-label">{{ $t('auth.role') }}</label>
-            <select v-model="auth.purpose" class="input">
-              <option value="owner">{{ $t('auth.purposeOwner') }}</option>
-              <option value="staff">{{ $t('auth.purposeStaff') }}</option>
-            </select>
-          </div>
+          <template v-else>
+            <div>
+              <label class="field-label">{{ $t('auth.username') }}</label>
+              <input
+                v-model="auth.username"
+                class="input"
+                :placeholder="$t('auth.usernamePlaceholder')"
+                type="text"
+                autocomplete="username"
+              />
+            </div>
+            <div>
+              <label class="field-label">{{ $t('auth.password') }}</label>
+              <input
+                v-model="auth.password"
+                class="input"
+                :placeholder="$t('auth.passwordPlaceholder')"
+                type="password"
+                autocomplete="current-password"
+              />
+            </div>
+          </template>
           <button
             class="btn-primary w-full"
-            :disabled="authLoading || !auth.phone"
-            @click="requestOtp"
+            :disabled="isPrimaryActionDisabled"
+            @click="submitStepOne"
           >
-            {{ authLoading ? $t('auth.sending') : $t('auth.requestOtp') }}
+            {{ primaryActionLabel }}
           </button>
           <p v-if="authMessage" :class="messageClass(authMessage.tone)">
             {{ authMessage.text }}
@@ -121,7 +143,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from 'vue';
+import { computed, reactive, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { getErrorMessage } from '../lib/errors';
 import { messageClass, setMessage } from '../lib/messages';
@@ -140,12 +162,49 @@ const step = ref<1 | 2>(1);
 
 const auth = reactive({
   phone: session.phoneNumber || '',
+  username: '',
+  password: '',
   purpose: (session.purpose === 'customer' ? 'staff' : session.purpose) || 'staff',
   code: ''
 });
 
 const authLoading = ref(false);
 const authMessage = ref<Message | null>(null);
+
+const isOwnerLogin = computed(() => auth.purpose === 'owner');
+const isPrimaryActionDisabled = computed(() => {
+  if (authLoading.value) {
+    return true;
+  }
+
+  if (isOwnerLogin.value) {
+    return !auth.phone.trim();
+  }
+
+  return !auth.username.trim() || !auth.password;
+});
+
+const primaryActionLabel = computed(() => {
+  if (isOwnerLogin.value) {
+    return authLoading.value ? t('auth.sending') : t('auth.requestOtp');
+  }
+
+  return authLoading.value ? t('auth.signingIn') : t('auth.signInNow');
+});
+
+watch(() => auth.purpose, () => {
+  step.value = 1;
+  auth.code = '';
+  authMessage.value = null;
+});
+
+async function submitStepOne() {
+  if (isOwnerLogin.value) {
+    await requestOtp();
+    return;
+  }
+  await loginStaff();
+}
 
 async function requestOtp() {
   authLoading.value = true;
@@ -157,6 +216,24 @@ async function requestOtp() {
     });
     step.value = 2;
     setMessage(authMessage, 'success', t('auth.otpSent'));
+  } catch (error) {
+    setMessage(authMessage, 'error', getErrorMessage(error));
+  } finally {
+    authLoading.value = false;
+  }
+}
+
+async function loginStaff() {
+  authLoading.value = true;
+  authMessage.value = null;
+  try {
+    const data = await authApi.staffLogin({
+      username: auth.username,
+      password: auth.password
+    });
+    session.setAuth(data.token, auth.username, 'staff');
+    await session.fetchMe();
+    router.push('/app');
   } catch (error) {
     setMessage(authMessage, 'error', getErrorMessage(error));
   } finally {

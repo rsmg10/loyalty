@@ -8,6 +8,7 @@
         :purpose="session.purpose"
         :owner-count="session.ownerBusinesses.length"
         :staff-count="session.staffBusinesses.length"
+        :lock-business-selection="lockBusinessSelection"
         @update:selected-business="(value) => (selectedBusiness = value)"
         @refresh="refreshMe"
       />
@@ -198,15 +199,18 @@
             @generate="generateMagicLink"
             @copy="copyMagicLink"
           />
-          <StaffManagementCard
-            :staff="staff"
-            :staff-list="staffList"
+          <StaffUsersManagementCard
+            :staff-user="staffUser"
+            :staff-users="staffUsers"
             :loading="staffLoading"
             :message="staffMessage"
-            @update:display-name="(value) => (staff.displayName = value)"
-            @update:phone-number="(value) => (staff.phoneNumber = value)"
+            @update:display-name="(value) => (staffUser.displayName = value)"
+            @update:username="(value) => (staffUser.username = value)"
+            @update:password="(value) => (staffUser.password = value)"
             @add="addStaff"
             @refresh="loadStaff"
+            @toggle-status="setStaffUserStatus"
+            @reset-password="promptStaffUserPasswordReset"
           />
           <RedemptionsCard
             :items="redemptions"
@@ -347,7 +351,7 @@ import type {
   StampIssueResponse,
   StampTransactionItem,
   StaffActivityReport,
-  StaffResponse,
+  StaffUserResponse,
   SuspiciousActivityReport,
   TimeActivityReport,
   TopCustomersReport,
@@ -367,7 +371,7 @@ import CustomerLookupCard from '../components/dashboard/CustomerLookupCard.vue';
 import CustomerProfileCard from '../components/dashboard/CustomerProfileCard.vue';
 import MembershipCard from '../components/dashboard/MembershipCard.vue';
 import LoyaltyConfigCard from '../components/dashboard/LoyaltyConfigCard.vue';
-import StaffManagementCard from '../components/dashboard/StaffManagementCard.vue';
+import StaffUsersManagementCard from '../components/dashboard/StaffUsersManagementCard.vue';
 import RedemptionsCard from '../components/dashboard/RedemptionsCard.vue';
 import StatsCard from '../components/dashboard/StatsCard.vue';
 import ReportCustomerActivityCard from '../components/dashboard/ReportCustomerActivityCard.vue';
@@ -440,11 +444,12 @@ const profile = reactive({
 const profileLoading = ref(false);
 const profileMessage = ref<Message | null>(null);
 
-const staff = reactive({
+const staffUser = reactive({
   displayName: '',
-  phoneNumber: ''
+  username: '',
+  password: ''
 });
-const staffList = ref<StaffResponse[]>([]);
+const staffUsers = ref<StaffUserResponse[]>([]);
 const staffLoading = ref(false);
 const staffMessage = ref<Message | null>(null);
 
@@ -559,6 +564,10 @@ const isOwner = computed(() => {
   }
   return session.ownerBusinesses.some((item) => item.id === activeBusiness.value.id);
 });
+
+const lockBusinessSelection = computed(() =>
+  session.purpose === 'staff' && businessOptions.value.length <= 1
+);
 
 watch(selectedBusiness, (value) => {
   session.setActiveBusiness(value ? Number(value) : null);
@@ -757,15 +766,21 @@ async function addStaff() {
     setMessage(staffMessage, 'error', t('messages.selectBusiness'));
     return;
   }
+  if (!staffUser.displayName.trim() || !staffUser.username.trim() || !staffUser.password.trim()) {
+    setMessage(staffMessage, 'error', t('messages.staffUserRequired'));
+    return;
+  }
   staffLoading.value = true;
   try {
-    await api.value.addStaff(activeBusiness.value.id, {
-      displayName: staff.displayName,
-      phoneNumber: staff.phoneNumber
+    await api.value.addStaffUser(activeBusiness.value.id, {
+      displayName: staffUser.displayName,
+      username: staffUser.username,
+      password: staffUser.password
     });
-    staff.displayName = '';
-    staff.phoneNumber = '';
-    setMessage(staffMessage, 'success', t('messages.staffAdded'));
+    staffUser.displayName = '';
+    staffUser.username = '';
+    staffUser.password = '';
+    setMessage(staffMessage, 'success', t('messages.staffUserAdded'));
     await loadStaff();
   } catch (error) {
     setMessage(staffMessage, 'error', getErrorMessage(error));
@@ -781,8 +796,47 @@ async function loadStaff() {
   }
   staffLoading.value = true;
   try {
-    staffList.value = await api.value.getStaff(activeBusiness.value.id);
-    setMessage(staffMessage, 'success', t('messages.staffRefreshed'));
+    staffUsers.value = await api.value.getStaffUsers(activeBusiness.value.id);
+    setMessage(staffMessage, 'success', t('messages.staffUsersRefreshed'));
+  } catch (error) {
+    setMessage(staffMessage, 'error', getErrorMessage(error));
+  } finally {
+    staffLoading.value = false;
+  }
+}
+
+async function setStaffUserStatus(staffId: number, active: boolean) {
+  if (!activeBusiness.value) {
+    setMessage(staffMessage, 'error', t('messages.selectBusiness'));
+    return;
+  }
+  staffLoading.value = true;
+  try {
+    await api.value.setStaffUserStatus(activeBusiness.value.id, staffId, active);
+    setMessage(staffMessage, 'success', active ? t('messages.staffUserActivated') : t('messages.staffUserDeactivated'));
+    await loadStaff();
+  } catch (error) {
+    setMessage(staffMessage, 'error', getErrorMessage(error));
+  } finally {
+    staffLoading.value = false;
+  }
+}
+
+async function promptStaffUserPasswordReset(staffId: number, username: string) {
+  if (!activeBusiness.value) {
+    setMessage(staffMessage, 'error', t('messages.selectBusiness'));
+    return;
+  }
+
+  const nextPassword = window.prompt(t('messages.staffPasswordPrompt', { username }), '');
+  if (!nextPassword?.trim()) {
+    return;
+  }
+
+  staffLoading.value = true;
+  try {
+    await api.value.resetStaffUserPassword(activeBusiness.value.id, staffId, nextPassword.trim());
+    setMessage(staffMessage, 'success', t('messages.staffPasswordReset'));
   } catch (error) {
     setMessage(staffMessage, 'error', getErrorMessage(error));
   } finally {

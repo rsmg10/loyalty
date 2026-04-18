@@ -22,12 +22,12 @@ import type {
   StampIssueResponse,
   StampTransactionItem,
   StaffActivityReport,
+  StaffUserResponse,
   SuspiciousActivityReport,
   TimeActivityReport,
   TopCustomersReport,
   VendorComparisonReport,
   VendorOverviewReport,
-  StaffResponse,
   VisitHistoryItem,
   VisitResponse
 } from '../lib/types';
@@ -85,10 +85,14 @@ export function useLoyaltyApi(token: string) {
       apiPost(`/businesses/${businessId}/loyalty-config`, payload, token),
     createMembership: (businessId: number, phoneNumber: string) =>
       apiPost(`/businesses/${businessId}/memberships`, { phoneNumber }, token),
-    addStaff: (businessId: number, payload: { displayName: string; phoneNumber: string }) =>
-      apiPost(`/businesses/${businessId}/staff`, payload, token),
-    getStaff: (businessId: number) =>
-      apiGet<StaffResponse[]>(`/businesses/${businessId}/staff`, token),
+    addStaffUser: (businessId: number, payload: { displayName: string; username: string; password: string }) =>
+      apiPost<StaffUserResponse>(`/businesses/${businessId}/staff-users`, payload, token),
+    getStaffUsers: (businessId: number) =>
+      apiGet<StaffUserResponse[]>(`/businesses/${businessId}/staff-users`, token),
+    setStaffUserStatus: (businessId: number, staffId: number, active: boolean) =>
+      apiPut<StaffUserResponse>(`/businesses/${businessId}/staff-users/${staffId}/status`, { active }, token),
+    resetStaffUserPassword: (businessId: number, staffId: number, password: string) =>
+      apiPut<StaffUserResponse>(`/businesses/${businessId}/staff-users/${staffId}/password`, { password }, token),
     getRedemptions: (businessId: number) =>
       apiGet<RedemptionSummary[]>(`/businesses/${businessId}/redemptions`, token),
     getStats: (businessId: number) =>
@@ -135,12 +139,14 @@ export function useLoyaltyApi(token: string) {
       apiPut<AdminBusinessDetail>(`/admin/businesses/${businessId}`, payload, token),
     createAdminBusiness: (payload: unknown) =>
       apiPost<AdminBusinessDetail>('/admin/businesses', payload, token),
-    getAdminStaff: (businessId: number) =>
-      apiGet<StaffResponse[]>(`/admin/businesses/${businessId}/staff`, token),
-    addAdminStaff: (businessId: number, payload: { displayName: string; phoneNumber: string }) =>
-      apiPost<StaffResponse>(`/admin/businesses/${businessId}/staff`, payload, token),
-    updateAdminStaff: (businessId: number, staffId: number, payload: { displayName?: string; phoneNumber?: string; active?: boolean }) =>
-      apiPut<StaffResponse>(`/admin/businesses/${businessId}/staff/${staffId}`, payload, token),
+    getAdminStaffUsers: (businessId: number) =>
+      apiGet<StaffUserResponse[]>(`/admin/businesses/${businessId}/staff-users`, token),
+    addAdminStaffUser: (businessId: number, payload: { displayName: string; username: string; password: string }) =>
+      apiPost<StaffUserResponse>(`/admin/businesses/${businessId}/staff-users`, payload, token),
+    setAdminStaffUserStatus: (businessId: number, staffId: number, active: boolean) =>
+      apiPut<StaffUserResponse>(`/admin/businesses/${businessId}/staff-users/${staffId}/status`, { active }, token),
+    resetAdminStaffUserPassword: (businessId: number, staffId: number, password: string) =>
+      apiPut<StaffUserResponse>(`/admin/businesses/${businessId}/staff-users/${staffId}/password`, { password }, token),
     uploadMedia: (businessId: number, formData: FormData) =>
       apiPostForm<LoyaltyMediaResponse>(`/businesses/${businessId}/loyalty-media`, formData, token),
     createMagicLink: (businessId: number) =>

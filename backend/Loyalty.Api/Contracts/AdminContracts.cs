@@ -38,5 +38,3 @@ public sealed record AdminBusinessUpdate(
     string? OptionalNote,
     int? StampExpirationDays
 );
-
-public sealed record AdminStaffUpdate(string? DisplayName, string? PhoneNumber, bool? Active);

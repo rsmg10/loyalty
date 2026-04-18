@@ -27,7 +27,9 @@ If this is a fresh DB, seed data is already inserted automatically in dev mode.
 
 Use these demo accounts:
 - Owner phone: `+10000000001`
-- Staff phone: `+10000000011`
+- Staff username (cafe): `lina.cafe`
+- Staff username (diner): `omar.diner`
+- Staff demo password: `staff1234`
 - Customer phone: `+15550000001`
 - Business ID for mobile demo: `1`
 
@@ -54,21 +56,20 @@ After this, you land in dashboard with business selected.
 ## 4) Add staff to a shop (Owner flow)
 
 1. In web dashboard, open **Owner tools** section.
-2. Open **Staff management** card.
-3. Enter staff display name + phone number.
-4. Click **Add staff**.
+2. Open **Staff users** card.
+3. Enter staff display name + username + password.
+4. Click **Create staff user**.
 
 Staff can now sign in with:
-- Purpose: `staff`
-- Their phone number
-- OTP `000000`
+- Role: `staff`
+- Username + password created by owner
 
 ## 5) Onboard customers
 
 You have two ways:
 
 ### Method A: Staff enrolls customer from web
-1. Staff logs in to web (`purpose=staff`).
+1. Staff logs in to web (role `staff`, username/password).
 2. In **Customer care** section, open **Membership join**.
 3. Enter customer phone and click **Create membership**.
 4. Optional: fill **Customer profile** (name, mobile, notes, usual order).
@@ -81,7 +82,7 @@ You have two ways:
 
 ## 6) Day-to-day operation (Staff flow)
 
-In web dashboard (`purpose=staff`):
+In web dashboard (staff username/password session):
 - **Front counter**:
   - Visit entry (record purchases)
   - Stamp issuance (manual adjustments)
@@ -115,7 +116,7 @@ Admin can:
 - View platform overview
 - Compare vendors
 - Search/edit businesses
-- Add/disable staff across businesses
+- Create/deactivate staff users and reset their passwords across businesses
 
 ## 8) Magic link / QR onboarding for customers
 

@@ -9,7 +9,7 @@ This file is the source-of-truth plan/status tracker for web work. Keep it updat
 - [x] OTP login + token storage
 - [x] Business selection (load from `/me` for owner/staff)
 - [x] Owner onboarding (business + loyalty config)
-- [x] Staff management (add/list staff)
+- [x] Staff user management (create/list/deactivate/reset credentials)
 - [x] Visit entry flow with cooldown handling
 - [x] Redemption flow + confirmation
 - [x] Customer lookup + status view
@@ -33,8 +33,7 @@ This file is the source-of-truth plan/status tracker for web work. Keep it updat
 - [x] Reporting suspicious activity
 - [x] Admin reporting console (platform overview + vendor comparison)
 - [x] Platform admin console (manage businesses + configs)
-- [x] Platform admin staff management (add/disable staff)
-- [x] Staff OTP guard (staff phone must exist as active staff before sign-in)
+- [x] Platform admin staff user management (create/deactivate/reset credentials)
 - [x] Stamp issuance flow (quantity + reason) using `/stamps`
 - [x] Membership join action (explicit create via `/memberships`)
 - [x] Stamp transaction history view (audit)
@@ -43,13 +42,14 @@ This file is the source-of-truth plan/status tracker for web work. Keep it updat
 - [x] Loyalty media upload (program icon + reward image)
 - [x] Guided startup + role flow hints (login/dashboard)
 - [x] Avatar/icon visual polish for staff, redemptions, customer history, and admin staff lists
-- [ ] Role-first auth split (owner auth separate from staff auth)
-- [ ] Staff credential auth (`username + password`) instead of staff phone OTP
+- [x] Role-first auth split (owner OTP vs staff credentials)
+- [x] Staff credential auth (`username + password`) with migration fallback
 - [x] Backend: owner user-management API for staff credentials (`/staff-users`)
 - [x] Backend: credential staff login endpoint (`POST /auth/staff/login`)
-- [ ] Web UI: owner user management (create/deactivate/reset staff credentials)
-- [ ] Web UI: staff login form (`username + password`)
-- [ ] Enforce one-business-per-staff (remove staff business picker UX)
+- [x] Web UI: owner user management (create/deactivate/reset staff credentials)
+- [x] Web UI: staff login form (`username + password`)
+- [x] Disable legacy staff OTP flow (`purpose=staff`) in backend
+- [x] Enforce one-business-per-staff (remove staff business picker UX)
 - [ ] Simplify IA: dedicated screens for user management vs daily counter operations
 
 ## Sellability TODOs
@@ -66,7 +66,7 @@ This file is the source-of-truth plan/status tracker for web work. Keep it updat
 
 ## Planned Screens
 
-- Login / OTP
+- Role login (owner OTP + staff credentials)
 - Business selector
 - Business setup
 - Visit entry
@@ -88,10 +88,12 @@ This file is the source-of-truth plan/status tracker for web work. Keep it updat
 - Configure `VITE_API_BASE_URL` to point at the backend (defaults to `http://localhost:5000`).
 - Auth is required for all API calls except OTP endpoints. Store the token from `/auth/verify-otp` and send `Authorization: Bearer <token>`.
 - The UI sends `Accept-Language: en|ar` (or `?lang=`) so backend error and SMS responses match the selected language.
-- Use `purpose` values like `owner` and `staff` in OTP requests to tag sessions.
-- `purpose=staff` now requires the phone to already exist as an active staff record; owners or platform admins must create staff first.
+- Use `purpose=owner` in OTP requests for owner sessions.
+- Staff web sessions should use `POST /auth/staff/login` with `username` + `password`.
+- `purpose=staff` OTP is disabled in backend.
 - Target flow (see `docs/USER_STORIES.md`) migrates staff auth from OTP phone to `username + password`.
-- Migration mode: both legacy staff OTP and new credential staff login currently exist until web UI cutover.
+- Login UI now uses owner OTP and staff username/password in the same role-first screen.
+- Platform admin staff operations also use credential staff users (`/admin/businesses/{businessId}/staff-users`).
 - Dev OTP can be fixed via `Otp__FixedCode` (e.g. `000000`) for local testing.
 - CORS origins are controlled by `Cors__AllowedOrigins` (comma-separated), defaulting to localhost web/mobile ports. For LAN/mobile testing, add your IP (e.g. `http://192.168.1.10:5173`). You can also set `Cors__AllowAll=true` for local dev.
 - Owners can onboard businesses, manage staff, and view redemptions. Staff can record visits, redeem rewards, and edit customer profiles.
@@ -112,8 +114,8 @@ This file is the source-of-truth plan/status tracker for web work. Keep it updat
 ## Required Flows
 
 1. Owner OTP login → onboarding (business + loyalty config).
-2. Owner/admin adds staff phone in staff management.
-3. Staff OTP login (existing active staff only) → visit entry + redemption.
+2. Owner/admin creates staff user (`displayName`, `username`, `password`) in staff user management.
+3. Staff logs in with username/password → visit entry + redemption.
 4. Customer lookup → profile update (name, optional mobile, usual order, notes).
 5. Owner staff management + redemption list.
 6. Staff/owner stamp issuance with quantity + reason.
@@ -127,16 +129,14 @@ Target flow (planned):
 
 ## API Checklist
 
-- POST `/auth/request-otp` { `phoneNumber`, `purpose` } (`purpose=staff` requires an active staff record)
-- POST `/auth/verify-otp` { `phoneNumber`, `code`, `purpose` } → `token` (`purpose=staff` re-checks active staff)
+- POST `/auth/request-otp` { `phoneNumber`, `purpose` } (`purpose=staff` is disabled)
+- POST `/auth/verify-otp` { `phoneNumber`, `code`, `purpose` } → `token` (`purpose=staff` is disabled)
 - POST `/auth/staff/login` { `username`, `password` } → `token` (credential-based staff login)
 - GET `/health` (public health check)
-- GET `/me` (owner + staff businesses)
+- GET `/me` (owner businesses + staff single-business scope)
 - POST `/onboarding` (owner only, includes `programName`, `programDescription`, `rewardName`, `visitThreshold`, `optionalNote`, `stampExpirationDays`)
 - GET `/businesses/{businessId}` (owner only)
 - POST `/businesses/{businessId}/loyalty-config` (owner only, includes `programName`, `programDescription`, `rewardName`, `visitThreshold`, `optionalNote`, `stampExpirationDays`)
-- POST `/businesses/{businessId}/staff` (owner only)
-- GET `/businesses/{businessId}/staff` (owner only)
 - POST `/businesses/{businessId}/staff-users` (owner only, credential staff create)
 - GET `/businesses/{businessId}/staff-users` (owner only, credential staff list)
 - PUT `/businesses/{businessId}/staff-users/{staffId}/status` (owner only, activate/deactivate credential staff)
@@ -167,9 +167,10 @@ Target flow (planned):
 - GET `/admin/businesses/{businessId}` (platform admin)
 - POST `/admin/businesses` (platform admin, same payload as onboarding)
 - PUT `/admin/businesses/{businessId}` (platform admin, update business + program)
-- GET `/admin/businesses/{businessId}/staff` (platform admin)
-- POST `/admin/businesses/{businessId}/staff` (platform admin)
-- PUT `/admin/businesses/{businessId}/staff/{staffId}` (platform admin, active toggle)
+- GET `/admin/businesses/{businessId}/staff-users` (platform admin)
+- POST `/admin/businesses/{businessId}/staff-users` (platform admin, credential staff create)
+- PUT `/admin/businesses/{businessId}/staff-users/{staffId}/status` (platform admin, activate/deactivate credential staff)
+- PUT `/admin/businesses/{businessId}/staff-users/{staffId}/password` (platform admin, reset credential staff password)
 - POST `/businesses/{businessId}/magic-links` (owner/staff, returns customer app link)
 - GET `/businesses/{businessId}/customers/{phoneNumber}` (staff/owner)
 - PUT `/businesses/{businessId}/customers/{phoneNumber}/profile` (staff/owner, includes optional `mobileNumber`)

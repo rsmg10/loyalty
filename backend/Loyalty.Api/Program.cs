@@ -1380,7 +1380,6 @@ app.MapPost("/auth/request-otp", async (
     AuthRequestOtp request,
     HttpRequest httpRequest,
     OtpService otpService,
-    AppDbContext db,
     LocalizationService localizer) =>
 {
     if (string.IsNullOrWhiteSpace(request.PhoneNumber) || string.IsNullOrWhiteSpace(request.Purpose))
@@ -1390,10 +1389,9 @@ app.MapPost("/auth/request-otp", async (
 
     var normalizedPhone = request.PhoneNumber.Trim();
     var purpose = request.Purpose.Trim().ToLowerInvariant();
-    if (string.Equals(purpose, "staff", StringComparison.Ordinal)
-        && !await HasActiveStaffLoginAsync(db, normalizedPhone))
+    if (string.Equals(purpose, "staff", StringComparison.Ordinal))
     {
-        return BadRequest(httpRequest, localizer, "Staff account not found. Ask the owner or platform admin to add your phone first");
+        return BadRequest(httpRequest, localizer, "Staff OTP sign-in is disabled. Use username and password");
     }
 
     var language = GetRequestLanguage(httpRequest, localizer);
@@ -1407,7 +1405,6 @@ app.MapPost("/auth/verify-otp", async (
     AuthVerifyOtp request,
     HttpRequest httpRequest,
     OtpService otpService,
-    AppDbContext db,
     LocalizationService localizer) =>
 {
     if (string.IsNullOrWhiteSpace(request.PhoneNumber)
@@ -1421,10 +1418,9 @@ app.MapPost("/auth/verify-otp", async (
     var purpose = request.Purpose.Trim().ToLowerInvariant();
     var code = request.Code.Trim();
 
-    if (string.Equals(purpose, "staff", StringComparison.Ordinal)
-        && !await HasActiveStaffLoginAsync(db, normalizedPhone))
+    if (string.Equals(purpose, "staff", StringComparison.Ordinal))
     {
-        return BadRequest(httpRequest, localizer, "Staff account not found. Ask the owner or platform admin to add your phone first");
+        return BadRequest(httpRequest, localizer, "Staff OTP sign-in is disabled. Use username and password");
     }
 
     var session = await otpService.VerifyOtpAsync(normalizedPhone, code, purpose);
@@ -1487,106 +1483,21 @@ app.MapGet("/me", async (HttpRequest httpRequest, AppDbContext db) =>
         .Select(b => new BusinessSummary(b.Id, b.Name, b.BusinessType))
         .ToListAsync();
 
-    var staffBusinessIds = await db.Staff
+    var staffBusinessId = await db.Staff
         .Where(s => s.PhoneNumber == session.PhoneNumber && s.Active)
-        .Select(s => s.BusinessId)
-        .Distinct()
-        .ToListAsync();
+        .OrderByDescending(s => s.CreatedAt)
+        .Select(s => (int?)s.BusinessId)
+        .FirstOrDefaultAsync();
 
-    var staffBusinesses = staffBusinessIds.Count == 0
+    var staffBusinesses = staffBusinessId is null
         ? []
         : await db.Businesses
-            .Where(b => staffBusinessIds.Contains(b.Id))
+            .Where(b => b.Id == staffBusinessId.Value)
             .OrderBy(b => b.Name)
             .Select(b => new BusinessSummary(b.Id, b.Name, b.BusinessType))
             .ToListAsync();
 
     return Results.Ok(new AuthMeResponse(session.PhoneNumber, ownerBusinesses, staffBusinesses));
-});
-
-app.MapPost("/businesses/{businessId:int}/staff", async (
-    int businessId,
-    StaffCreate request,
-    HttpRequest httpRequest,
-    AppDbContext db,
-    LocalizationService localizer) =>
-{
-    if (string.IsNullOrWhiteSpace(request.DisplayName) || string.IsNullOrWhiteSpace(request.PhoneNumber))
-    {
-        return BadRequest(httpRequest, localizer, "Display name and phone number are required");
-    }
-
-    var business = await db.Businesses.FirstOrDefaultAsync(b => b.Id == businessId);
-    if (business is null)
-    {
-        return NotFound(httpRequest, localizer, "Business not found");
-    }
-
-    var session = await GetAuthSessionAsync(httpRequest, db);
-    if (session is null)
-    {
-        return Results.Unauthorized();
-    }
-
-    if (!string.Equals(session.PhoneNumber, business.OwnerPhone, StringComparison.Ordinal))
-    {
-        return Results.Forbid();
-    }
-
-    var staff = new Staff
-    {
-        BusinessId = businessId,
-        DisplayName = request.DisplayName.Trim(),
-        PhoneNumber = request.PhoneNumber.Trim(),
-        Active = true,
-    };
-
-    db.Staff.Add(staff);
-    await db.SaveChangesAsync();
-
-    return Results.Ok(new StaffResponse(
-        staff.Id,
-        staff.DisplayName,
-        staff.PhoneNumber,
-        staff.Active,
-        staff.CreatedAt));
-});
-
-app.MapGet("/businesses/{businessId:int}/staff", async (
-    int businessId,
-    HttpRequest httpRequest,
-    AppDbContext db,
-    LocalizationService localizer) =>
-{
-    var business = await db.Businesses.FirstOrDefaultAsync(b => b.Id == businessId);
-    if (business is null)
-    {
-        return NotFound(httpRequest, localizer, "Business not found");
-    }
-
-    var session = await GetAuthSessionAsync(httpRequest, db);
-    if (session is null)
-    {
-        return Results.Unauthorized();
-    }
-
-    if (!string.Equals(session.PhoneNumber, business.OwnerPhone, StringComparison.Ordinal))
-    {
-        return Results.Forbid();
-    }
-
-    var staffMembers = await db.Staff
-        .Where(s => s.BusinessId == businessId)
-        .OrderByDescending(s => s.CreatedAt)
-        .Select(s => new StaffResponse(
-            s.Id,
-            s.DisplayName,
-            s.PhoneNumber,
-            s.Active,
-            s.CreatedAt))
-        .ToListAsync();
-
-    return Results.Ok(staffMembers);
 });
 
 app.MapGet("/businesses/{businessId:int}/staff-users", async (
@@ -1900,13 +1811,6 @@ static async Task<int?> GetStaffIdForSessionAsync(AppDbContext db, Business busi
         .Where(s => s.BusinessId == business.Id && s.PhoneNumber == phoneNumber && s.Active)
         .Select(s => (int?)s.Id)
         .FirstOrDefaultAsync();
-}
-
-static async Task<bool> HasActiveStaffLoginAsync(AppDbContext db, string phoneNumber)
-{
-    return await db.Staff.AnyAsync(s =>
-        s.PhoneNumber == phoneNumber
-        && s.Active);
 }
 
 static void SetCycleSnapshot(LoyaltyCycle cycle, LoyaltyConfig config)
