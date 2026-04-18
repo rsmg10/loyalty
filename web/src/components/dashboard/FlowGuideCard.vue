@@ -28,6 +28,7 @@
     <div class="mt-4 flex flex-wrap gap-2">
       <button class="btn-mini" @click="$emit('jump', 'front-counter')">{{ $t('nav.counter') }}</button>
       <button class="btn-mini" @click="$emit('jump', 'customer-care')">{{ $t('nav.customers') }}</button>
+      <button v-if="isOwner" class="btn-mini" @click="$emit('open-user-management')">{{ $t('nav.users') }}</button>
       <button v-if="isOwner" class="btn-mini" @click="$emit('jump', 'owner-tools')">{{ $t('nav.owner') }}</button>
     </div>
   </section>
@@ -40,5 +41,6 @@ defineProps<{
 
 defineEmits<{
   (e: 'jump', sectionId: string): void;
+  (e: 'open-user-management'): void;
 }>();
 </script>

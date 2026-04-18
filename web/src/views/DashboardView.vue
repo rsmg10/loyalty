@@ -16,9 +16,8 @@
       <QuickActionsCard
         v-if="activeBusiness"
         :is-owner="isOwner"
-        :staff-loading="staffLoading"
         :redemptions-loading="redemptionsLoading"
-        @load-staff="loadStaff"
+        @open-user-management="openOwnerUsers"
         @load-redemptions="loadRedemptions"
       />
 
@@ -37,8 +36,16 @@
       </section>
 
       <section v-else class="space-y-6">
-        <QuickActionsToolbar :is-owner="isOwner" @jump="jumpTo" />
-        <FlowGuideCard :is-owner="isOwner" @jump="jumpTo" />
+        <QuickActionsToolbar
+          :is-owner="isOwner"
+          @jump="jumpTo"
+          @open-user-management="openOwnerUsers"
+        />
+        <FlowGuideCard
+          :is-owner="isOwner"
+          @jump="jumpTo"
+          @open-user-management="openOwnerUsers"
+        />
 
         <SectionGroup
           section-id="front-counter"
@@ -172,6 +179,17 @@
           :subtitle="$t('dashboard.ownerToolsSubtitle')"
           :default-open="false"
         >
+          <section class="glass-card animate-rise border-dusk/10">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 class="section-title">{{ $t('dashboard.userManagementTitle') }}</h2>
+                <p class="mt-1 text-sm text-dusk/70">{{ $t('dashboard.userManagementSubtitle') }}</p>
+              </div>
+              <button class="btn-primary" @click="openOwnerUsers">
+                {{ $t('dashboard.openUserManagement') }}
+              </button>
+            </div>
+          </section>
           <LoyaltyConfigCard
             :config="loyaltyConfig"
             :loading="loyaltyLoading"
@@ -198,19 +216,6 @@
             :message="magicLinkMessage"
             @generate="generateMagicLink"
             @copy="copyMagicLink"
-          />
-          <StaffUsersManagementCard
-            :staff-user="staffUser"
-            :staff-users="staffUsers"
-            :loading="staffLoading"
-            :message="staffMessage"
-            @update:display-name="(value) => (staffUser.displayName = value)"
-            @update:username="(value) => (staffUser.username = value)"
-            @update:password="(value) => (staffUser.password = value)"
-            @add="addStaff"
-            @refresh="loadStaff"
-            @toggle-status="setStaffUserStatus"
-            @reset-password="promptStaffUserPasswordReset"
           />
           <RedemptionsCard
             :items="redemptions"
@@ -331,6 +336,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue';
+import { useRouter } from 'vue-router';
 import { getErrorMessage } from '../lib/errors';
 import { messageClass, setMessage } from '../lib/messages';
 import type { Message } from '../lib/messages';
@@ -351,7 +357,6 @@ import type {
   StampIssueResponse,
   StampTransactionItem,
   StaffActivityReport,
-  StaffUserResponse,
   SuspiciousActivityReport,
   TimeActivityReport,
   TopCustomersReport,
@@ -371,7 +376,6 @@ import CustomerLookupCard from '../components/dashboard/CustomerLookupCard.vue';
 import CustomerProfileCard from '../components/dashboard/CustomerProfileCard.vue';
 import MembershipCard from '../components/dashboard/MembershipCard.vue';
 import LoyaltyConfigCard from '../components/dashboard/LoyaltyConfigCard.vue';
-import StaffUsersManagementCard from '../components/dashboard/StaffUsersManagementCard.vue';
 import RedemptionsCard from '../components/dashboard/RedemptionsCard.vue';
 import StatsCard from '../components/dashboard/StatsCard.vue';
 import ReportCustomerActivityCard from '../components/dashboard/ReportCustomerActivityCard.vue';
@@ -397,6 +401,7 @@ type BusinessOption = {
 };
 
 const session = useSessionStore();
+const router = useRouter();
 const api = computed(() => useLoyaltyApi(session.token));
 const { t } = useI18n();
 
@@ -443,15 +448,6 @@ const profile = reactive({
 });
 const profileLoading = ref(false);
 const profileMessage = ref<Message | null>(null);
-
-const staffUser = reactive({
-  displayName: '',
-  username: '',
-  password: ''
-});
-const staffUsers = ref<StaffUserResponse[]>([]);
-const staffLoading = ref(false);
-const staffMessage = ref<Message | null>(null);
 
 const loyaltyConfig = reactive({
   programName: '',
@@ -625,6 +621,13 @@ function toggleQuickActions() {
   quickActionsOpen.value = !quickActionsOpen.value;
 }
 
+function openOwnerUsers() {
+  if (!isOwner.value) {
+    return;
+  }
+  router.push({ name: 'owner-users' });
+}
+
 onMounted(() => {
   const targets = ['front-counter', 'customer-care', 'owner-tools']
     .map((id) => document.getElementById(id))
@@ -758,89 +761,6 @@ async function updateProfile() {
     setMessage(profileMessage, 'error', getErrorMessage(error));
   } finally {
     profileLoading.value = false;
-  }
-}
-
-async function addStaff() {
-  if (!activeBusiness.value) {
-    setMessage(staffMessage, 'error', t('messages.selectBusiness'));
-    return;
-  }
-  if (!staffUser.displayName.trim() || !staffUser.username.trim() || !staffUser.password.trim()) {
-    setMessage(staffMessage, 'error', t('messages.staffUserRequired'));
-    return;
-  }
-  staffLoading.value = true;
-  try {
-    await api.value.addStaffUser(activeBusiness.value.id, {
-      displayName: staffUser.displayName,
-      username: staffUser.username,
-      password: staffUser.password
-    });
-    staffUser.displayName = '';
-    staffUser.username = '';
-    staffUser.password = '';
-    setMessage(staffMessage, 'success', t('messages.staffUserAdded'));
-    await loadStaff();
-  } catch (error) {
-    setMessage(staffMessage, 'error', getErrorMessage(error));
-  } finally {
-    staffLoading.value = false;
-  }
-}
-
-async function loadStaff() {
-  if (!activeBusiness.value) {
-    setMessage(staffMessage, 'error', t('messages.selectBusiness'));
-    return;
-  }
-  staffLoading.value = true;
-  try {
-    staffUsers.value = await api.value.getStaffUsers(activeBusiness.value.id);
-    setMessage(staffMessage, 'success', t('messages.staffUsersRefreshed'));
-  } catch (error) {
-    setMessage(staffMessage, 'error', getErrorMessage(error));
-  } finally {
-    staffLoading.value = false;
-  }
-}
-
-async function setStaffUserStatus(staffId: number, active: boolean) {
-  if (!activeBusiness.value) {
-    setMessage(staffMessage, 'error', t('messages.selectBusiness'));
-    return;
-  }
-  staffLoading.value = true;
-  try {
-    await api.value.setStaffUserStatus(activeBusiness.value.id, staffId, active);
-    setMessage(staffMessage, 'success', active ? t('messages.staffUserActivated') : t('messages.staffUserDeactivated'));
-    await loadStaff();
-  } catch (error) {
-    setMessage(staffMessage, 'error', getErrorMessage(error));
-  } finally {
-    staffLoading.value = false;
-  }
-}
-
-async function promptStaffUserPasswordReset(staffId: number, username: string) {
-  if (!activeBusiness.value) {
-    setMessage(staffMessage, 'error', t('messages.selectBusiness'));
-    return;
-  }
-
-  const nextPassword = window.prompt(t('messages.staffPasswordPrompt', { username }), '');
-  if (!nextPassword?.trim()) {
-    return;
-  }
-
-  staffLoading.value = true;
-  try {
-    await api.value.resetStaffUserPassword(activeBusiness.value.id, staffId, nextPassword.trim());
-    setMessage(staffMessage, 'success', t('messages.staffPasswordReset'));
-  } catch (error) {
-    setMessage(staffMessage, 'error', getErrorMessage(error));
-  } finally {
-    staffLoading.value = false;
   }
 }
 

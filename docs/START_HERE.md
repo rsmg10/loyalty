@@ -55,8 +55,8 @@ After this, you land in dashboard with business selected.
 
 ## 4) Add staff to a shop (Owner flow)
 
-1. In web dashboard, open **Owner tools** section.
-2. Open **Staff users** card.
+1. In web dashboard, click **Open user management** (or go to `http://localhost:5173/owner/users`).
+2. Select the owner business.
 3. Enter staff display name + username + password.
 4. Click **Create staff user**.
 

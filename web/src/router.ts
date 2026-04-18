@@ -4,6 +4,7 @@ import LoginView from './views/LoginView.vue';
 import DashboardView from './views/DashboardView.vue';
 import OnboardingView from './views/OnboardingView.vue';
 import AdminConsoleView from './views/AdminConsoleView.vue';
+import OwnerStaffUsersView from './views/OwnerStaffUsersView.vue';
 
 const router = createRouter({
   history: createWebHistory(),
@@ -12,6 +13,7 @@ const router = createRouter({
     { path: '/login', name: 'login', component: LoginView },
     { path: '/onboarding', name: 'onboarding', component: OnboardingView, meta: { requiresAuth: true } },
     { path: '/app', name: 'app', component: DashboardView, meta: { requiresAuth: true } },
+    { path: '/owner/users', name: 'owner-users', component: OwnerStaffUsersView, meta: { requiresAuth: true, requiresOwner: true } },
     { path: '/admin', name: 'admin', component: AdminConsoleView, meta: { requiresAuth: true } }
   ]
 });
@@ -19,6 +21,7 @@ const router = createRouter({
 router.beforeEach(async (to) => {
   const session = useSessionStore();
   const requiresAuth = Boolean(to.meta.requiresAuth);
+  const requiresOwner = Boolean(to.meta.requiresOwner);
 
   if (requiresAuth && !session.isAuthenticated) {
     return { name: 'login' };
@@ -39,6 +42,10 @@ router.beforeEach(async (to) => {
 
   if (to.name === 'app' && session.meLoaded && !session.hasBusinesses) {
     return { name: 'onboarding' };
+  }
+
+  if (requiresOwner && session.meLoaded && session.ownerBusinesses.length === 0) {
+    return { name: session.hasBusinesses ? 'app' : 'onboarding' };
   }
 
   return true;
