@@ -36,6 +36,10 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             .HasIndex(s => new { s.BusinessId, s.PhoneNumber })
             .IsUnique();
 
+        modelBuilder.Entity<Staff>()
+            .HasIndex(s => s.NormalizedUsername)
+            .IsUnique();
+
         modelBuilder.Entity<StampTransaction>()
             .HasIndex(t => new { t.BusinessId, t.CustomerId });
 

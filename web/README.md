@@ -43,6 +43,14 @@ This file is the source-of-truth plan/status tracker for web work. Keep it updat
 - [x] Loyalty media upload (program icon + reward image)
 - [x] Guided startup + role flow hints (login/dashboard)
 - [x] Avatar/icon visual polish for staff, redemptions, customer history, and admin staff lists
+- [ ] Role-first auth split (owner auth separate from staff auth)
+- [ ] Staff credential auth (`username + password`) instead of staff phone OTP
+- [x] Backend: owner user-management API for staff credentials (`/staff-users`)
+- [x] Backend: credential staff login endpoint (`POST /auth/staff/login`)
+- [ ] Web UI: owner user management (create/deactivate/reset staff credentials)
+- [ ] Web UI: staff login form (`username + password`)
+- [ ] Enforce one-business-per-staff (remove staff business picker UX)
+- [ ] Simplify IA: dedicated screens for user management vs daily counter operations
 
 ## Sellability TODOs
 
@@ -82,6 +90,8 @@ This file is the source-of-truth plan/status tracker for web work. Keep it updat
 - The UI sends `Accept-Language: en|ar` (or `?lang=`) so backend error and SMS responses match the selected language.
 - Use `purpose` values like `owner` and `staff` in OTP requests to tag sessions.
 - `purpose=staff` now requires the phone to already exist as an active staff record; owners or platform admins must create staff first.
+- Target flow (see `docs/USER_STORIES.md`) migrates staff auth from OTP phone to `username + password`.
+- Migration mode: both legacy staff OTP and new credential staff login currently exist until web UI cutover.
 - Dev OTP can be fixed via `Otp__FixedCode` (e.g. `000000`) for local testing.
 - CORS origins are controlled by `Cors__AllowedOrigins` (comma-separated), defaulting to localhost web/mobile ports. For LAN/mobile testing, add your IP (e.g. `http://192.168.1.10:5173`). You can also set `Cors__AllowAll=true` for local dev.
 - Owners can onboard businesses, manage staff, and view redemptions. Staff can record visits, redeem rewards, and edit customer profiles.
@@ -109,10 +119,17 @@ This file is the source-of-truth plan/status tracker for web work. Keep it updat
 6. Staff/owner stamp issuance with quantity + reason.
 7. Owner stats view (enrolled customers, stamps issued, rewards redeemed).
 
+Target flow (planned):
+1. Staff cannot self-signup.
+2. Owner creates staff credentials.
+3. Staff signs in with username/password and is auto-scoped to one business.
+4. Owner handles staff lifecycle in a dedicated user management screen.
+
 ## API Checklist
 
 - POST `/auth/request-otp` { `phoneNumber`, `purpose` } (`purpose=staff` requires an active staff record)
 - POST `/auth/verify-otp` { `phoneNumber`, `code`, `purpose` } → `token` (`purpose=staff` re-checks active staff)
+- POST `/auth/staff/login` { `username`, `password` } → `token` (credential-based staff login)
 - GET `/health` (public health check)
 - GET `/me` (owner + staff businesses)
 - POST `/onboarding` (owner only, includes `programName`, `programDescription`, `rewardName`, `visitThreshold`, `optionalNote`, `stampExpirationDays`)
@@ -120,6 +137,10 @@ This file is the source-of-truth plan/status tracker for web work. Keep it updat
 - POST `/businesses/{businessId}/loyalty-config` (owner only, includes `programName`, `programDescription`, `rewardName`, `visitThreshold`, `optionalNote`, `stampExpirationDays`)
 - POST `/businesses/{businessId}/staff` (owner only)
 - GET `/businesses/{businessId}/staff` (owner only)
+- POST `/businesses/{businessId}/staff-users` (owner only, credential staff create)
+- GET `/businesses/{businessId}/staff-users` (owner only, credential staff list)
+- PUT `/businesses/{businessId}/staff-users/{staffId}/status` (owner only, activate/deactivate credential staff)
+- PUT `/businesses/{businessId}/staff-users/{staffId}/password` (owner only, reset credential staff password)
 - POST `/businesses/{businessId}/visits` (staff/owner)
 - POST `/businesses/{businessId}/stamps` (staff/owner, `{ customerPhone, quantity, reason, staffId? }`)
 - POST `/businesses/{businessId}/memberships` (staff/owner)

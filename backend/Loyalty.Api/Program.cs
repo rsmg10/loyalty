@@ -1436,6 +1436,43 @@ app.MapPost("/auth/verify-otp", async (
     return Results.Ok(new AuthTokenResponse(session.Token, session.ExpiresAt));
 });
 
+app.MapPost("/auth/staff/login", async (
+    StaffLoginRequest request,
+    HttpRequest httpRequest,
+    AppDbContext db,
+    LocalizationService localizer) =>
+{
+    if (string.IsNullOrWhiteSpace(request.Username) || string.IsNullOrWhiteSpace(request.Password))
+    {
+        return BadRequest(httpRequest, localizer, "Username and password are required");
+    }
+
+    var normalizedUsername = request.Username.Trim().ToLowerInvariant();
+
+    var staff = await db.Staff
+        .FirstOrDefaultAsync(s => s.NormalizedUsername == normalizedUsername && s.Active);
+
+    if (staff is null
+        || string.IsNullOrWhiteSpace(staff.PasswordHash)
+        || string.IsNullOrWhiteSpace(staff.PasswordSalt)
+        || !PasswordHasher.Verify(request.Password, staff.PasswordHash, staff.PasswordSalt))
+    {
+        return BadRequest(httpRequest, localizer, "Invalid username or password");
+    }
+
+    var session = new AuthSession
+    {
+        PhoneNumber = staff.PhoneNumber,
+        Token = Guid.NewGuid().ToString("N"),
+        ExpiresAt = DateTime.UtcNow.AddHours(12),
+    };
+
+    db.AuthSessions.Add(session);
+    await db.SaveChangesAsync();
+
+    return Results.Ok(new AuthTokenResponse(session.Token, session.ExpiresAt));
+});
+
 app.MapGet("/me", async (HttpRequest httpRequest, AppDbContext db) =>
 {
     var session = await GetAuthSessionAsync(httpRequest, db);
@@ -1550,6 +1587,218 @@ app.MapGet("/businesses/{businessId:int}/staff", async (
         .ToListAsync();
 
     return Results.Ok(staffMembers);
+});
+
+app.MapGet("/businesses/{businessId:int}/staff-users", async (
+    int businessId,
+    HttpRequest httpRequest,
+    AppDbContext db,
+    LocalizationService localizer) =>
+{
+    var business = await db.Businesses.FirstOrDefaultAsync(b => b.Id == businessId);
+    if (business is null)
+    {
+        return NotFound(httpRequest, localizer, "Business not found");
+    }
+
+    var session = await GetAuthSessionAsync(httpRequest, db);
+    if (session is null)
+    {
+        return Results.Unauthorized();
+    }
+
+    if (!string.Equals(session.PhoneNumber, business.OwnerPhone, StringComparison.Ordinal))
+    {
+        return Results.Forbid();
+    }
+
+    var users = await db.Staff
+        .Where(s => s.BusinessId == businessId && s.NormalizedUsername != null)
+        .OrderByDescending(s => s.CreatedAt)
+        .Select(s => new StaffUserResponse(
+            s.Id,
+            s.DisplayName,
+            s.Username ?? string.Empty,
+            s.Active,
+            s.CreatedAt))
+        .ToListAsync();
+
+    return Results.Ok(users);
+});
+
+app.MapPost("/businesses/{businessId:int}/staff-users", async (
+    int businessId,
+    StaffUserCreate request,
+    HttpRequest httpRequest,
+    AppDbContext db,
+    LocalizationService localizer) =>
+{
+    if (string.IsNullOrWhiteSpace(request.DisplayName)
+        || string.IsNullOrWhiteSpace(request.Username)
+        || string.IsNullOrWhiteSpace(request.Password))
+    {
+        return BadRequest(httpRequest, localizer, "Display name, username, and password are required");
+    }
+
+    var business = await db.Businesses.FirstOrDefaultAsync(b => b.Id == businessId);
+    if (business is null)
+    {
+        return NotFound(httpRequest, localizer, "Business not found");
+    }
+
+    var session = await GetAuthSessionAsync(httpRequest, db);
+    if (session is null)
+    {
+        return Results.Unauthorized();
+    }
+
+    if (!string.Equals(session.PhoneNumber, business.OwnerPhone, StringComparison.Ordinal))
+    {
+        return Results.Forbid();
+    }
+
+    var username = request.Username.Trim();
+    var normalizedUsername = username.ToLowerInvariant();
+    if (!IsValidStaffUsername(username))
+    {
+        return BadRequest(httpRequest, localizer, "Username must be 3-40 chars and use letters, numbers, dot, underscore, or hyphen");
+    }
+
+    var usernameExists = await db.Staff.AnyAsync(s => s.NormalizedUsername == normalizedUsername);
+    if (usernameExists)
+    {
+        return BadRequest(httpRequest, localizer, "Username already exists");
+    }
+
+    var password = request.Password.Trim();
+    if (password.Length < 8)
+    {
+        return BadRequest(httpRequest, localizer, "Password must be at least 8 characters");
+    }
+
+    var (hash, salt) = PasswordHasher.Hash(password);
+
+    var staff = new Staff
+    {
+        BusinessId = businessId,
+        DisplayName = request.DisplayName.Trim(),
+        Username = username,
+        NormalizedUsername = normalizedUsername,
+        PasswordHash = hash,
+        PasswordSalt = salt,
+        // Keep legacy staff phone-based lookups operational while migrating to username login.
+        PhoneNumber = BuildInternalStaffPhone(businessId, normalizedUsername),
+        Active = true,
+    };
+
+    db.Staff.Add(staff);
+    await db.SaveChangesAsync();
+
+    return Results.Ok(new StaffUserResponse(
+        staff.Id,
+        staff.DisplayName,
+        staff.Username,
+        staff.Active,
+        staff.CreatedAt));
+});
+
+app.MapPut("/businesses/{businessId:int}/staff-users/{staffId:int}/status", async (
+    int businessId,
+    int staffId,
+    StaffUserStatusUpdate request,
+    HttpRequest httpRequest,
+    AppDbContext db,
+    LocalizationService localizer) =>
+{
+    var business = await db.Businesses.FirstOrDefaultAsync(b => b.Id == businessId);
+    if (business is null)
+    {
+        return NotFound(httpRequest, localizer, "Business not found");
+    }
+
+    var session = await GetAuthSessionAsync(httpRequest, db);
+    if (session is null)
+    {
+        return Results.Unauthorized();
+    }
+
+    if (!string.Equals(session.PhoneNumber, business.OwnerPhone, StringComparison.Ordinal))
+    {
+        return Results.Forbid();
+    }
+
+    var staff = await db.Staff
+        .FirstOrDefaultAsync(s => s.BusinessId == businessId && s.Id == staffId && s.NormalizedUsername != null);
+    if (staff is null)
+    {
+        return NotFound(httpRequest, localizer, "Staff not found");
+    }
+
+    staff.Active = request.Active;
+    await db.SaveChangesAsync();
+
+    return Results.Ok(new StaffUserResponse(
+        staff.Id,
+        staff.DisplayName,
+        staff.Username ?? string.Empty,
+        staff.Active,
+        staff.CreatedAt));
+});
+
+app.MapPut("/businesses/{businessId:int}/staff-users/{staffId:int}/password", async (
+    int businessId,
+    int staffId,
+    StaffUserPasswordUpdate request,
+    HttpRequest httpRequest,
+    AppDbContext db,
+    LocalizationService localizer) =>
+{
+    if (string.IsNullOrWhiteSpace(request.Password))
+    {
+        return BadRequest(httpRequest, localizer, "Password is required");
+    }
+
+    var business = await db.Businesses.FirstOrDefaultAsync(b => b.Id == businessId);
+    if (business is null)
+    {
+        return NotFound(httpRequest, localizer, "Business not found");
+    }
+
+    var session = await GetAuthSessionAsync(httpRequest, db);
+    if (session is null)
+    {
+        return Results.Unauthorized();
+    }
+
+    if (!string.Equals(session.PhoneNumber, business.OwnerPhone, StringComparison.Ordinal))
+    {
+        return Results.Forbid();
+    }
+
+    var staff = await db.Staff
+        .FirstOrDefaultAsync(s => s.BusinessId == businessId && s.Id == staffId && s.NormalizedUsername != null);
+    if (staff is null)
+    {
+        return NotFound(httpRequest, localizer, "Staff not found");
+    }
+
+    var password = request.Password.Trim();
+    if (password.Length < 8)
+    {
+        return BadRequest(httpRequest, localizer, "Password must be at least 8 characters");
+    }
+
+    var (hash, salt) = PasswordHasher.Hash(password);
+    staff.PasswordHash = hash;
+    staff.PasswordSalt = salt;
+    await db.SaveChangesAsync();
+
+    return Results.Ok(new StaffUserResponse(
+        staff.Id,
+        staff.DisplayName,
+        staff.Username ?? string.Empty,
+        staff.Active,
+        staff.CreatedAt));
 });
 
 app.MapGet("/businesses/{businessId:int}", async (
@@ -1746,6 +1995,30 @@ static void ResetCycle(LoyaltyCycle cycle)
     cycle.Status = "PROGRESSING";
     cycle.LastStampAt = null;
     cycle.RewardAvailableAt = null;
+}
+
+static string BuildInternalStaffPhone(int businessId, string normalizedUsername)
+{
+    return $"staff:{businessId}:{normalizedUsername}";
+}
+
+static bool IsValidStaffUsername(string username)
+{
+    if (username.Length is < 3 or > 40)
+    {
+        return false;
+    }
+
+    foreach (var ch in username)
+    {
+        var isAllowed = char.IsLetterOrDigit(ch) || ch is '.' or '_' or '-';
+        if (!isAllowed)
+        {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 static string GetRequestLanguage(HttpRequest request, LocalizationService localizer)

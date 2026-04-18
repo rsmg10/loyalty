@@ -26,6 +26,13 @@ public sealed class LocalizationService
         ["Invalid or expired code"] = "الرمز غير صالح أو منتهي",
         ["Staff account not found. Ask the owner or platform admin to add your phone first"] = "حساب الموظف غير موجود. اطلب من المالك أو مدير المنصة إضافة رقمك أولاً",
         ["Display name and phone number are required"] = "الاسم ورقم الهاتف مطلوبان",
+        ["Username and password are required"] = "اسم المستخدم وكلمة المرور مطلوبان",
+        ["Invalid username or password"] = "اسم المستخدم أو كلمة المرور غير صحيحين",
+        ["Display name, username, and password are required"] = "الاسم واسم المستخدم وكلمة المرور مطلوبة",
+        ["Username already exists"] = "اسم المستخدم مستخدم بالفعل",
+        ["Password is required"] = "كلمة المرور مطلوبة",
+        ["Password must be at least 8 characters"] = "كلمة المرور يجب أن تكون 8 أحرف على الأقل",
+        ["Username must be 3-40 chars and use letters, numbers, dot, underscore, or hyphen"] = "اسم المستخدم يجب أن يكون بين 3 و40 حرفًا ويحتوي على أحرف أو أرقام أو نقطة أو شرطة سفلية أو شرطة",
         ["Object storage is not configured."] = "تخزين الملفات غير مُعدّ",
         ["Magic link not found or expired"] = "رابط الدخول غير صالح أو منتهي",
         ["Invalid date range"] = "نطاق التاريخ غير صالح"

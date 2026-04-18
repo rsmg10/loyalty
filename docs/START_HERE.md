@@ -2,6 +2,9 @@
 
 This guide is the fastest way to get from zero to a working system with shops, staff, customers, and platform admin.
 
+For target product flow and user-story decisions, see `docs/USER_STORIES.md`.
+This file describes the current runnable dev flow.
+
 ## 1) Start the system
 
 From the repo root:

@@ -324,13 +324,28 @@ namespace Loyalty.Api.Data.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("NormalizedUsername")
+                        .HasColumnType("text");
+
+                    b.Property<string>("PasswordHash")
+                        .HasColumnType("text");
+
+                    b.Property<string>("PasswordSalt")
+                        .HasColumnType("text");
+
                     b.Property<string>("PhoneNumber")
                         .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Username")
                         .HasColumnType("text");
 
                     b.HasKey("Id");
 
                     b.HasIndex("BusinessId", "PhoneNumber")
+                        .IsUnique();
+
+                    b.HasIndex("NormalizedUsername")
                         .IsUnique();
 
                     b.ToTable("Staff");

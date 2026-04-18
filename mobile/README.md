@@ -17,6 +17,8 @@ This file is the source-of-truth plan/status tracker for mobile/PWA work. Keep i
 - [x] Login guidance checklist (how to start + join flow)
 - [x] Avatar fallback + richer visual history rows
 - [ ] Platform admin console is web-only (no mobile scope)
+- [ ] Align with auth split (customer auth remains mobile-only; staff credentials are web-only)
+- [x] Backend now includes credential staff auth endpoints (web migration in progress)
 
 ## Sellability TODOs (Platform)
 
@@ -46,6 +48,8 @@ This file is the source-of-truth plan/status tracker for mobile/PWA work. Keep i
 - The app sends `Accept-Language: en|ar` (or `?lang=`) so backend responses match the selected language.
 - Use `purpose` value `customer` in OTP requests.
 - Shared OTP endpoints now enforce that `purpose=staff` is pre-provisioned (active staff created by owner/admin on web); mobile remains customer-only.
+- Target flow (see `docs/USER_STORIES.md`) keeps mobile strictly customer-facing while staff moves to username/password on web.
+- Migration mode: backend currently supports both legacy OTP staff login and new credential staff login for staged rollout.
 - Dev OTP can be fixed via `Otp__FixedCode` (e.g. `000000`) for local testing.
 - CORS origins are controlled by `Cors__AllowedOrigins` (comma-separated), defaulting to localhost web/mobile ports. For LAN/mobile testing, add your IP (e.g. `http://192.168.1.10:5174`). You can also set `Cors__AllowAll=true` for local dev.
 - The app is read-only: show loyalty status and visit history only.
@@ -68,6 +72,8 @@ This file is the source-of-truth plan/status tracker for mobile/PWA work. Keep i
 
 - POST `/auth/request-otp` { `phoneNumber`, `purpose` } (`purpose=staff` requires active staff; mobile uses `customer`)
 - POST `/auth/verify-otp` { `phoneNumber`, `code`, `purpose` } → `token` (`purpose=staff` re-checks active staff)
+- POST `/auth/staff/login` { `username`, `password` } → `token` (web staff flow; mobile should not use)
+- Planned direction: mobile should call customer-only auth endpoints when backend auth split lands.
 - GET `/health` (public health check)
 - GET `/me` (optional; can be used to confirm the authenticated phone number)
 - GET `/businesses/{businessId}/customers/{phoneNumber}` (status)
