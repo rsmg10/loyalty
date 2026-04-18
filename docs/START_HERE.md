@@ -92,6 +92,11 @@ In web dashboard (staff username/password session):
   - Update profile
   - Review visit/stamp history
 
+Owner reporting flow:
+- Open `http://localhost:5173/owner/reports`
+- Select owner business
+- Load overview, customer activity, issuance, redemption, retention, and staff activity reports
+
 ## 7) Enable and use platform admin
 
 Admin access is controlled by `Reporting__AdminPhones`.

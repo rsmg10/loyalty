@@ -5,6 +5,7 @@ import DashboardView from './views/DashboardView.vue';
 import OnboardingView from './views/OnboardingView.vue';
 import AdminConsoleView from './views/AdminConsoleView.vue';
 import OwnerStaffUsersView from './views/OwnerStaffUsersView.vue';
+import OwnerReportsView from './views/OwnerReportsView.vue';
 
 const router = createRouter({
   history: createWebHistory(),
@@ -14,6 +15,7 @@ const router = createRouter({
     { path: '/onboarding', name: 'onboarding', component: OnboardingView, meta: { requiresAuth: true } },
     { path: '/app', name: 'app', component: DashboardView, meta: { requiresAuth: true } },
     { path: '/owner/users', name: 'owner-users', component: OwnerStaffUsersView, meta: { requiresAuth: true, requiresOwner: true } },
+    { path: '/owner/reports', name: 'owner-reports', component: OwnerReportsView, meta: { requiresAuth: true, requiresOwner: true } },
     { path: '/admin', name: 'admin', component: AdminConsoleView, meta: { requiresAuth: true } }
   ]
 });

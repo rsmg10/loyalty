@@ -22,7 +22,8 @@ const messages = {
       counter: 'Counter',
       customers: 'Customers',
       owner: 'Owner',
-      users: 'Users'
+      users: 'Users',
+      reports: 'Reports'
     },
     auth: {
       signIn: 'Sign in',
@@ -183,9 +184,12 @@ const messages = {
       customerCare: 'Customer care',
       customerCareSubtitle: 'Lookup, profile updates, and membership joins.',
       ownerTools: 'Owner tools',
-      ownerToolsSubtitle: 'Program controls and reporting.',
+      ownerToolsSubtitle: 'Program controls, links, redemptions, and business stats.',
       userManagementTitle: 'User management',
       userManagementSubtitle: 'Staff lifecycle is now in a dedicated screen to keep operations focused.',
+      reportsTitle: 'Reporting workspace',
+      reportsSubtitle: 'Reporting has moved to a dedicated screen so dashboard operations stay focused.',
+      openReports: 'Open reports',
       rewardEarned: 'Reward earned',
       rewardReady: 'Ready to redeem',
       rewardEarnedHint: 'This customer has reached the stamp threshold. Confirm with them and tap Redeem below.',
@@ -209,6 +213,14 @@ const messages = {
       backToDashboard: 'Back to dashboard',
       ownerOnlyTitle: 'Owner access only',
       ownerOnlyHint: 'This screen is available only to business owners.'
+    },
+    ownerReports: {
+      title: 'Owner reports',
+      description: 'Analyze customer behavior, retention, issuance, and redemptions for this business.',
+      sidebarHint: 'Use this dedicated reporting screen when reviewing performance and trends.',
+      backToDashboard: 'Back to dashboard',
+      ownerOnlyTitle: 'Owner access only',
+      ownerOnlyHint: 'This reporting screen is available only to business owners.'
     },
     cards: {
       visitEntry: 'Visit entry',
@@ -497,7 +509,8 @@ const messages = {
       counter: 'الكاشير',
       customers: 'العملاء',
       owner: 'المالك',
-      users: 'المستخدمون'
+      users: 'المستخدمون',
+      reports: 'التقارير'
     },
     auth: {
       signIn: 'تسجيل الدخول',
@@ -658,9 +671,12 @@ const messages = {
       customerCare: 'خدمة العملاء',
       customerCareSubtitle: 'استعلام وتحديث ملف العميل والانضمام.',
       ownerTools: 'أدوات المالك',
-      ownerToolsSubtitle: 'البرنامج والتقارير.',
+      ownerToolsSubtitle: 'البرنامج والروابط والاستبدالات وإحصاءات النشاط.',
       userManagementTitle: 'إدارة المستخدمين',
       userManagementSubtitle: 'دورة حياة الموظفين أصبحت في شاشة مستقلة للحفاظ على تركيز التشغيل.',
+      reportsTitle: 'مساحة التقارير',
+      reportsSubtitle: 'التقارير أصبحت في شاشة مستقلة حتى تبقى لوحة التشغيل اليومية مركزة.',
+      openReports: 'فتح التقارير',
       rewardEarned: 'مكافأة مستحقة',
       rewardReady: 'جاهزة للاستبدال',
       rewardEarnedHint: 'وصل هذا العميل لحد الأختام. تأكد معه ثم اضغط استبدال أدناه.',
@@ -684,6 +700,14 @@ const messages = {
       backToDashboard: 'العودة للوحة التشغيل',
       ownerOnlyTitle: 'للمالك فقط',
       ownerOnlyHint: 'هذه الشاشة متاحة فقط لمالكي الأنشطة.'
+    },
+    ownerReports: {
+      title: 'تقارير المالك',
+      description: 'حلّل سلوك العملاء والاحتفاظ والإصدار والاستبدالات لهذا النشاط.',
+      sidebarHint: 'استخدم شاشة التقارير المخصصة عند مراجعة الأداء والاتجاهات.',
+      backToDashboard: 'العودة للوحة التشغيل',
+      ownerOnlyTitle: 'للمالك فقط',
+      ownerOnlyHint: 'شاشة التقارير هذه متاحة فقط لمالكي الأنشطة.'
     },
     cards: {
       visitEntry: 'تسجيل زيارة',

@@ -51,6 +51,7 @@ This file is the source-of-truth plan/status tracker for web work. Keep it updat
 - [x] Disable legacy staff OTP flow (`purpose=staff`) in backend
 - [x] Enforce one-business-per-staff (remove staff business picker UX)
 - [x] Simplify IA: dedicated owner user-management screen (`/owner/users`) separate from daily counter dashboard
+- [x] Simplify IA: dedicated owner reports screen (`/owner/reports`) separate from daily counter dashboard
 
 ## Sellability TODOs
 
@@ -75,6 +76,7 @@ This file is the source-of-truth plan/status tracker for web work. Keep it updat
 - Redemption
 - Loyalty config (owner)
 - Owner user management (owner-only, dedicated screen)
+- Owner reports (owner-only, dedicated screen)
 - Dashboard hub (multi-card workspace)
 - Stamp issuance (quantity + reason)
 - Stamp history (customer audit)
@@ -87,6 +89,7 @@ This file is the source-of-truth plan/status tracker for web work. Keep it updat
 - Stack: Vue 3 + Vite + TypeScript + Tailwind CSS + Pinia.
 - Vue Router splits `/login`, `/onboarding`, and `/app` flows.
 - Owner user-management route is `/owner/users` (owner-only).
+- Owner reports route is `/owner/reports` (owner-only).
 - Configure `VITE_API_BASE_URL` to point at the backend (defaults to `http://localhost:5000`).
 - Auth is required for all API calls except OTP endpoints. Store the token from `/auth/verify-otp` and send `Authorization: Bearer <token>`.
 - The UI sends `Accept-Language: en|ar` (or `?lang=`) so backend error and SMS responses match the selected language.
@@ -119,7 +122,7 @@ This file is the source-of-truth plan/status tracker for web work. Keep it updat
 2. Owner/admin creates staff user (`displayName`, `username`, `password`) in staff user management.
 3. Staff logs in with username/password → visit entry + redemption.
 4. Customer lookup → profile update (name, optional mobile, usual order, notes).
-5. Owner staff management in dedicated `/owner/users` screen + redemption list in dashboard owner tools.
+5. Owner staff management in `/owner/users` + owner reporting in `/owner/reports`.
 6. Staff/owner stamp issuance with quantity + reason.
 7. Owner stats view (enrolled customers, stamps issued, rewards redeemed).
 
