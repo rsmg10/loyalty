@@ -53,6 +53,7 @@ This file is the source-of-truth plan/status tracker for web work. Keep it updat
 - [x] Simplify IA: dedicated owner user-management screen (`/owner/users`) separate from daily counter dashboard
 - [x] Simplify IA: dedicated owner settings screen (`/owner/settings`) for loyalty config + magic links
 - [x] Simplify IA: dedicated owner reports screen (`/owner/reports`) separate from daily counter dashboard
+- [x] Simplify IA: dedicated owner operations screen (`/owner/operations`) for redemptions + business stats
 
 ## Sellability TODOs
 
@@ -77,12 +78,12 @@ This file is the source-of-truth plan/status tracker for web work. Keep it updat
 - Redemption
 - Loyalty config (owner)
 - Owner user management (owner-only, dedicated screen)
+- Owner operations (owner-only, dedicated screen)
 - Owner settings (owner-only, dedicated screen)
 - Owner reports (owner-only, dedicated screen)
 - Dashboard hub (multi-card workspace)
 - Stamp issuance (quantity + reason)
 - Stamp history (customer audit)
-- Business stats (owner)
 - Loyalty media upload (program icon + reward image)
 - Magic link / QR generator (owner)
 
@@ -91,6 +92,7 @@ This file is the source-of-truth plan/status tracker for web work. Keep it updat
 - Stack: Vue 3 + Vite + TypeScript + Tailwind CSS + Pinia.
 - Vue Router splits `/login`, `/onboarding`, and `/app` flows.
 - Owner user-management route is `/owner/users` (owner-only).
+- Owner operations route is `/owner/operations` (owner-only).
 - Owner settings route is `/owner/settings` (owner-only).
 - Owner reports route is `/owner/reports` (owner-only).
 - Configure `VITE_API_BASE_URL` to point at the backend (defaults to `http://localhost:5000`).
@@ -104,7 +106,7 @@ This file is the source-of-truth plan/status tracker for web work. Keep it updat
 - Platform admin staff operations also use credential staff users (`/admin/businesses/{businessId}/staff-users`).
 - Dev OTP can be fixed via `Otp__FixedCode` (e.g. `000000`) for local testing.
 - CORS origins are controlled by `Cors__AllowedOrigins` (comma-separated), defaulting to localhost web/mobile ports. For LAN/mobile testing, add your IP (e.g. `http://192.168.1.10:5173`). You can also set `Cors__AllowAll=true` for local dev.
-- Owners can onboard businesses, manage staff, and view redemptions. Staff can record visits, redeem rewards, and edit customer profiles.
+- Owners can onboard businesses, manage staff, and run owner operations/settings/reports in dedicated routes. Staff can record visits, redeem rewards, and edit customer profiles.
 - Login now includes a startup checklist (dev command, URLs, OTP behavior, and role flow expectations).
 - Dashboard now includes a flow guide card (owner -> staff -> customer -> platform admin path).
 - Visit cooldown is enforced server-side; the visit response always returns the current progress/reward status even when a visit is ignored.
@@ -125,9 +127,9 @@ This file is the source-of-truth plan/status tracker for web work. Keep it updat
 2. Owner/admin creates staff user (`displayName`, `username`, `password`) in staff user management.
 3. Staff logs in with username/password → visit entry + redemption.
 4. Customer lookup → profile update (name, optional mobile, usual order, notes).
-5. Owner staff management in `/owner/users` + owner settings in `/owner/settings` + owner reporting in `/owner/reports`.
+5. Owner staff management in `/owner/users` + owner operations in `/owner/operations` + owner settings in `/owner/settings` + owner reporting in `/owner/reports`.
 6. Staff/owner stamp issuance with quantity + reason.
-7. Owner stats view (enrolled customers, stamps issued, rewards redeemed).
+7. Owner redemptions/stats view in `/owner/operations` (enrolled customers, stamps issued, rewards redeemed).
 
 Target flow (planned):
 1. Staff cannot self-signup.

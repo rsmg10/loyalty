@@ -21,6 +21,7 @@ const messages = {
       collapse: 'Collapse',
       counter: 'Counter',
       customers: 'Customers',
+      operations: 'Operations',
       owner: 'Owner',
       settings: 'Settings',
       users: 'Users',
@@ -178,6 +179,7 @@ const messages = {
       staffBusinesses: 'Staff businesses',
       refreshMe: 'Refresh /me',
       shortcuts: 'Shortcuts',
+      openOperations: 'Open operations',
       openUserManagement: 'Open user management',
       openSettings: 'Open settings',
       loadRedemptions: 'Load redemptions',
@@ -233,6 +235,14 @@ const messages = {
       backToDashboard: 'Back to dashboard',
       ownerOnlyTitle: 'Owner access only',
       ownerOnlyHint: 'This reporting screen is available only to business owners.'
+    },
+    ownerOperations: {
+      title: 'Owner operations',
+      description: 'Review redemptions and key business totals in one focused owner operations screen.',
+      sidebarHint: 'Use this workspace for daily owner operations without mixing setup or reporting tasks.',
+      backToDashboard: 'Back to dashboard',
+      ownerOnlyTitle: 'Owner access only',
+      ownerOnlyHint: 'This operations screen is available only to business owners.'
     },
     cards: {
       visitEntry: 'Visit entry',
@@ -520,6 +530,7 @@ const messages = {
       collapse: 'طي',
       counter: 'الكاشير',
       customers: 'العملاء',
+      operations: 'التشغيل',
       owner: 'المالك',
       settings: 'الإعدادات',
       users: 'المستخدمون',
@@ -677,6 +688,7 @@ const messages = {
       staffBusinesses: 'أنشطة الموظف',
       refreshMe: 'تحديث /me',
       shortcuts: 'اختصارات',
+      openOperations: 'فتح التشغيل',
       openUserManagement: 'فتح إدارة المستخدمين',
       openSettings: 'فتح الإعدادات',
       loadRedemptions: 'تحميل الاستبدالات',
@@ -732,6 +744,14 @@ const messages = {
       backToDashboard: 'العودة للوحة التشغيل',
       ownerOnlyTitle: 'للمالك فقط',
       ownerOnlyHint: 'شاشة التقارير هذه متاحة فقط لمالكي الأنشطة.'
+    },
+    ownerOperations: {
+      title: 'تشغيل المالك',
+      description: 'راجع الاستبدالات ومؤشرات النشاط الأساسية في شاشة تشغيل مخصصة للمالك.',
+      sidebarHint: 'استخدم هذه الشاشة لعمليات المالك اليومية بدون خلط مهام الإعداد أو التقارير.',
+      backToDashboard: 'العودة للوحة التشغيل',
+      ownerOnlyTitle: 'للمالك فقط',
+      ownerOnlyHint: 'شاشة التشغيل هذه متاحة فقط لمالكي الأنشطة.'
     },
     cards: {
       visitEntry: 'تسجيل زيارة',

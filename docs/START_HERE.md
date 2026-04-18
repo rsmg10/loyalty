@@ -80,7 +80,7 @@ You have two ways:
 3. Enters Business ID (or opens QR/magic link).
 4. Clicks **Join program** if not enrolled yet.
 
-## 6) Day-to-day operation (Staff flow)
+## 6) Day-to-day operation (Staff + Owner)
 
 In web dashboard (staff username/password session):
 - **Front counter**:
@@ -91,6 +91,11 @@ In web dashboard (staff username/password session):
   - Lookup status
   - Update profile
   - Review visit/stamp history
+
+Owner operations flow:
+- Open `http://localhost:5173/owner/operations`
+- Select owner business
+- Review recent redemptions and core totals (enrolled customers, stamps issued, rewards redeemed)
 
 Owner reporting flow:
 - Open `http://localhost:5173/owner/reports`

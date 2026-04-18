@@ -83,8 +83,9 @@ Acceptance criteria:
 1. Login screen only contains authentication controls.
 2. Owner Home contains only summary cards and entry points.
 3. User management has its own dedicated screen.
-4. Front-counter actions are grouped on one focused staff screen.
-5. Reporting and configuration are separate from daily operations.
+4. Owner operations (redemptions + business totals) has its own dedicated screen.
+5. Front-counter actions are grouped on one focused staff screen.
+6. Reporting and configuration are separate from daily operations.
 
 ## Screen Map (Target)
 
@@ -94,12 +95,15 @@ Acceptance criteria:
 4. `Owner Onboarding` flow (stepper)
 5. `Owner Home` screen
 6. `Owner User Management` screen
-7. `Staff Workspace` screen
-8. `Customer Mobile` flow
+7. `Owner Operations` screen
+8. `Owner Settings` screen
+9. `Owner Reports` screen
+10. `Staff Workspace` screen
+11. `Customer Mobile` flow
 
 ## Navigation Rules (Target)
 
-1. Owner nav: Home, Customers, Staff Users, Loyalty Config, Reports.
+1. Owner nav: Home, Operations, Staff Users, Settings, Reports.
 2. Staff nav: Workspace, Customer Lookup, Redemptions History.
 3. Platform admin nav remains separate from business operations.
 

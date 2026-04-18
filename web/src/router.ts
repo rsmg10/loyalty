@@ -7,6 +7,7 @@ import AdminConsoleView from './views/AdminConsoleView.vue';
 import OwnerStaffUsersView from './views/OwnerStaffUsersView.vue';
 import OwnerReportsView from './views/OwnerReportsView.vue';
 import OwnerSettingsView from './views/OwnerSettingsView.vue';
+import OwnerOperationsView from './views/OwnerOperationsView.vue';
 
 const router = createRouter({
   history: createWebHistory(),
@@ -18,6 +19,7 @@ const router = createRouter({
     { path: '/owner/users', name: 'owner-users', component: OwnerStaffUsersView, meta: { requiresAuth: true, requiresOwner: true } },
     { path: '/owner/settings', name: 'owner-settings', component: OwnerSettingsView, meta: { requiresAuth: true, requiresOwner: true } },
     { path: '/owner/reports', name: 'owner-reports', component: OwnerReportsView, meta: { requiresAuth: true, requiresOwner: true } },
+    { path: '/owner/operations', name: 'owner-operations', component: OwnerOperationsView, meta: { requiresAuth: true, requiresOwner: true } },
     { path: '/admin', name: 'admin', component: AdminConsoleView, meta: { requiresAuth: true } }
   ]
 });

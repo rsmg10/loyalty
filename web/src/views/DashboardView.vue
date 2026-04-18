@@ -16,11 +16,10 @@
       <QuickActionsCard
         v-if="activeBusiness"
         :is-owner="isOwner"
-        :redemptions-loading="redemptionsLoading"
+        @open-operations="openOwnerOperations"
         @open-user-management="openOwnerUsers"
         @open-settings="openOwnerSettings"
         @open-reports="openOwnerReports"
-        @load-redemptions="loadRedemptions"
       />
 
       <SectionNavCard
@@ -28,6 +27,7 @@
         :is-owner="isOwner"
         :active-section="activeSection"
         @jump="jumpTo"
+        @open-operations="openOwnerOperations"
       />
     </aside>
 
@@ -41,6 +41,7 @@
         <QuickActionsToolbar
           :is-owner="isOwner"
           @jump="jumpTo"
+          @open-operations="openOwnerOperations"
           @open-user-management="openOwnerUsers"
           @open-settings="openOwnerSettings"
           @open-reports="openOwnerReports"
@@ -48,6 +49,7 @@
         <FlowGuideCard
           :is-owner="isOwner"
           @jump="jumpTo"
+          @open-operations="openOwnerOperations"
           @open-user-management="openOwnerUsers"
           @open-settings="openOwnerSettings"
           @open-reports="openOwnerReports"
@@ -178,59 +180,6 @@
           />
         </SectionGroup>
 
-        <SectionGroup
-          v-if="isOwner"
-          section-id="owner-tools"
-          :title="$t('dashboard.ownerTools')"
-          :subtitle="$t('dashboard.ownerToolsSubtitle')"
-          :default-open="false"
-        >
-          <section class="glass-card animate-rise border-dusk/10">
-            <div class="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <h2 class="section-title">{{ $t('dashboard.userManagementTitle') }}</h2>
-                <p class="mt-1 text-sm text-dusk/70">{{ $t('dashboard.userManagementSubtitle') }}</p>
-              </div>
-              <button class="btn-primary" @click="openOwnerUsers">
-                {{ $t('dashboard.openUserManagement') }}
-              </button>
-            </div>
-          </section>
-          <section class="glass-card animate-rise border-dusk/10">
-            <div class="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <h2 class="section-title">{{ $t('dashboard.reportsTitle') }}</h2>
-                <p class="mt-1 text-sm text-dusk/70">{{ $t('dashboard.reportsSubtitle') }}</p>
-              </div>
-              <button class="btn-primary" @click="openOwnerReports">
-                {{ $t('dashboard.openReports') }}
-              </button>
-            </div>
-          </section>
-          <section class="glass-card animate-rise border-dusk/10">
-            <div class="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <h2 class="section-title">{{ $t('dashboard.settingsTitle') }}</h2>
-                <p class="mt-1 text-sm text-dusk/70">{{ $t('dashboard.settingsSubtitle') }}</p>
-              </div>
-              <button class="btn-primary" @click="openOwnerSettings">
-                {{ $t('dashboard.openSettings') }}
-              </button>
-            </div>
-          </section>
-          <RedemptionsCard
-            :items="redemptions"
-            :loading="redemptionsLoading"
-            :message="redemptionsMessage"
-            @refresh="loadRedemptions"
-          />
-          <StatsCard
-            :stats="stats"
-            :loading="statsLoading"
-            :message="statsMessage"
-            @refresh="loadStats"
-          />
-        </SectionGroup>
       </section>
     </section>
   </main>
@@ -260,10 +209,9 @@
       <button
         v-if="isOwner"
         class="btn-mini"
-        :class="activeSection === 'owner-tools' ? 'border-ember/40 text-ember' : ''"
-        @click="jumpTo('owner-tools')"
+        @click="openOwnerOperations"
       >
-        {{ $t('nav.owner') }}
+        {{ $t('nav.operations') }}
       </button>
     </div>
   </div>
@@ -278,10 +226,8 @@ import type { Message } from '../lib/messages';
 import { useLoyaltyApi } from '../composables/useLoyaltyApi';
 import { useI18n } from 'vue-i18n';
 import type {
-  BusinessStatsResponse,
   CustomerStatusResponse,
   RedemptionResponse,
-  RedemptionSummary,
   StampIssueResponse,
   StampTransactionItem,
   VisitHistoryItem,
@@ -298,8 +244,6 @@ import RedemptionCard from '../components/dashboard/RedemptionCard.vue';
 import CustomerLookupCard from '../components/dashboard/CustomerLookupCard.vue';
 import CustomerProfileCard from '../components/dashboard/CustomerProfileCard.vue';
 import MembershipCard from '../components/dashboard/MembershipCard.vue';
-import RedemptionsCard from '../components/dashboard/RedemptionsCard.vue';
-import StatsCard from '../components/dashboard/StatsCard.vue';
 import SectionGroup from '../components/dashboard/SectionGroup.vue';
 
 type BusinessOption = {
@@ -358,19 +302,11 @@ const profile = reactive({
 const profileLoading = ref(false);
 const profileMessage = ref<Message | null>(null);
 
-const redemptions = ref<RedemptionSummary[]>([]);
-const redemptionsLoading = ref(false);
-const redemptionsMessage = ref<Message | null>(null);
-
 const membership = reactive({
   phone: ''
 });
 const membershipLoading = ref(false);
 const membershipMessage = ref<Message | null>(null);
-
-const stats = ref<BusinessStatsResponse | null>(null);
-const statsLoading = ref(false);
-const statsMessage = ref<Message | null>(null);
 
 const activeSection = ref('front-counter');
 const quickActionsOpen = ref(false);
@@ -468,6 +404,13 @@ function openOwnerUsers() {
   router.push({ name: 'owner-users' });
 }
 
+function openOwnerOperations() {
+  if (!isOwner.value) {
+    return;
+  }
+  router.push({ name: 'owner-operations' });
+}
+
 function openOwnerSettings() {
   if (!isOwner.value) {
     return;
@@ -483,7 +426,7 @@ function openOwnerReports() {
 }
 
 onMounted(() => {
-  const targets = ['front-counter', 'customer-care', 'owner-tools']
+  const targets = ['front-counter', 'customer-care']
     .map((id) => document.getElementById(id))
     .filter(Boolean) as HTMLElement[];
 
@@ -618,23 +561,6 @@ async function updateProfile() {
   }
 }
 
-async function loadRedemptions() {
-  if (!activeBusiness.value) {
-    setMessage(redemptionsMessage, 'error', t('messages.selectBusiness'));
-    return;
-  }
-  redemptionsLoading.value = true;
-  try {
-    redemptions.value = await api.value.getRedemptions(activeBusiness.value.id);
-    setMessage(redemptionsMessage, 'success', t('messages.redemptionsLoaded'));
-  } catch (error) {
-    setMessage(redemptionsMessage, 'error', getErrorMessage(error));
-  } finally {
-    redemptionsLoading.value = false;
-  }
-}
-
-
 async function issueStamps() {
   if (!activeBusiness.value) {
     setMessage(stampIssueMessage, 'error', t('messages.selectBusiness'));
@@ -685,22 +611,6 @@ async function createMembership() {
     setMessage(membershipMessage, 'error', getErrorMessage(error));
   } finally {
     membershipLoading.value = false;
-  }
-}
-
-async function loadStats() {
-  if (!activeBusiness.value) {
-    setMessage(statsMessage, 'error', t('messages.selectBusiness'));
-    return;
-  }
-  statsLoading.value = true;
-  try {
-    stats.value = await api.value.getStats(activeBusiness.value.id);
-    setMessage(statsMessage, 'success', t('messages.statsLoaded'));
-  } catch (error) {
-    setMessage(statsMessage, 'error', getErrorMessage(error));
-  } finally {
-    statsLoading.value = false;
   }
 }
 

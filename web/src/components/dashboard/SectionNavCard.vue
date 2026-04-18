@@ -27,10 +27,9 @@
         <button
           v-if="isOwner"
           class="btn-ghost w-full"
-          :class="activeSection === 'owner-tools' ? 'border-ember/40 text-ember' : ''"
-          @click="$emit('jump', 'owner-tools')"
+          @click="$emit('open-operations')"
         >
-          {{ $t('dashboard.ownerTools') }}
+          {{ $t('dashboard.openOperations') }}
         </button>
       </div>
     </details>
@@ -45,5 +44,6 @@ defineProps<{
 
 defineEmits<{
   (e: 'jump', sectionId: string): void;
+  (e: 'open-operations'): void;
 }>();
 </script>
