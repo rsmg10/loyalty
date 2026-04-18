@@ -87,10 +87,11 @@ In web dashboard (staff username/password session):
   - Visit entry (record purchases)
   - Stamp issuance (manual adjustments)
   - Redemption (use reward)
-- **Customer care**:
-  - Lookup status
-  - Update profile
-  - Review visit/stamp history
+
+Customer care flow (staff/owner):
+- Open `http://localhost:5173/customer-care`
+- Lookup customer status + visit/stamp history
+- Update customer profile and create membership
 
 Owner operations flow:
 - Open `http://localhost:5173/owner/operations`

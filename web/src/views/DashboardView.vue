@@ -16,6 +16,7 @@
       <QuickActionsCard
         v-if="activeBusiness"
         :is-owner="isOwner"
+        @open-customer-care="openCustomerCare"
         @open-operations="openOwnerOperations"
         @open-user-management="openOwnerUsers"
         @open-settings="openOwnerSettings"
@@ -27,6 +28,7 @@
         :is-owner="isOwner"
         :active-section="activeSection"
         @jump="jumpTo"
+        @open-customer-care="openCustomerCare"
         @open-operations="openOwnerOperations"
       />
     </aside>
@@ -41,6 +43,7 @@
         <QuickActionsToolbar
           :is-owner="isOwner"
           @jump="jumpTo"
+          @open-customer-care="openCustomerCare"
           @open-operations="openOwnerOperations"
           @open-user-management="openOwnerUsers"
           @open-settings="openOwnerSettings"
@@ -49,6 +52,7 @@
         <FlowGuideCard
           :is-owner="isOwner"
           @jump="jumpTo"
+          @open-customer-care="openCustomerCare"
           @open-operations="openOwnerOperations"
           @open-user-management="openOwnerUsers"
           @open-settings="openOwnerSettings"
@@ -140,46 +144,6 @@
           </div>
         </SectionGroup>
 
-        <SectionGroup
-          section-id="customer-care"
-          :title="$t('dashboard.customerCare')"
-          :subtitle="$t('dashboard.customerCareSubtitle')"
-          :default-open="true"
-        >
-          <CustomerLookupCard
-            :phone="lookup.phone"
-            :loading="lookupLoading"
-            :result="lookupResult"
-            :message="lookupMessage"
-            :visit-history="visitHistory"
-            :history-loading="historyLoading"
-            :stamp-history="stampHistory"
-            :stamp-history-loading="stampHistoryLoading"
-            @update:phone="(value) => { lookup.phone = value; profile.phone = value }"
-            @fetch="fetchCustomer"
-            @fetch-history="fetchHistory"
-            @fetch-stamps="fetchStampHistory"
-          />
-          <CustomerProfileCard
-            :profile="profile"
-            :loading="profileLoading"
-            :message="profileMessage"
-            @update:phone="(value) => (profile.phone = value)"
-            @update:display-name="(value) => (profile.displayName = value)"
-            @update:mobile-number="(value) => (profile.mobileNumber = value)"
-            @update:usual-order="(value) => (profile.usualOrder = value)"
-            @update:notes="(value) => (profile.notes = value)"
-            @save="updateProfile"
-          />
-          <MembershipCard
-            :phone="membership.phone"
-            :loading="membershipLoading"
-            :message="membershipMessage"
-            @update:phone="(value) => (membership.phone = value)"
-            @create="createMembership"
-          />
-        </SectionGroup>
-
       </section>
     </section>
   </main>
@@ -199,11 +163,7 @@
       >
         {{ $t('nav.counter') }}
       </button>
-      <button
-        class="btn-mini"
-        :class="activeSection === 'customer-care' ? 'border-ember/40 text-ember' : ''"
-        @click="jumpTo('customer-care')"
-      >
+      <button class="btn-mini" @click="openCustomerCare">
         {{ $t('nav.customers') }}
       </button>
       <button
@@ -226,11 +186,8 @@ import type { Message } from '../lib/messages';
 import { useLoyaltyApi } from '../composables/useLoyaltyApi';
 import { useI18n } from 'vue-i18n';
 import type {
-  CustomerStatusResponse,
   RedemptionResponse,
   StampIssueResponse,
-  StampTransactionItem,
-  VisitHistoryItem,
   VisitResponse
 } from '../lib/types';
 import { useSessionStore } from '../stores/session';
@@ -241,9 +198,6 @@ import FlowGuideCard from '../components/dashboard/FlowGuideCard.vue';
 import SectionNavCard from '../components/dashboard/SectionNavCard.vue';
 import VisitEntryCard from '../components/dashboard/VisitEntryCard.vue';
 import RedemptionCard from '../components/dashboard/RedemptionCard.vue';
-import CustomerLookupCard from '../components/dashboard/CustomerLookupCard.vue';
-import CustomerProfileCard from '../components/dashboard/CustomerProfileCard.vue';
-import MembershipCard from '../components/dashboard/MembershipCard.vue';
 import SectionGroup from '../components/dashboard/SectionGroup.vue';
 
 type BusinessOption = {
@@ -281,43 +235,14 @@ const redeemResult = ref<RedemptionResponse | null>(null);
 const redeemLoading = ref(false);
 const redeemMessage = ref<Message | null>(null);
 
-const lookup = reactive({
-  phone: ''
-});
-const lookupResult = ref<CustomerStatusResponse | null>(null);
-const visitHistory = ref<VisitHistoryItem[]>([]);
-const stampHistory = ref<StampTransactionItem[]>([]);
-const lookupLoading = ref(false);
-const historyLoading = ref(false);
-const stampHistoryLoading = ref(false);
-const lookupMessage = ref<Message | null>(null);
-
-const profile = reactive({
-  phone: '',
-  displayName: '',
-  mobileNumber: '',
-  usualOrder: '',
-  notes: ''
-});
-const profileLoading = ref(false);
-const profileMessage = ref<Message | null>(null);
-
-const membership = reactive({
-  phone: ''
-});
-const membershipLoading = ref(false);
-const membershipMessage = ref<Message | null>(null);
-
 const activeSection = ref('front-counter');
 const quickActionsOpen = ref(false);
 const showStampIssue = ref(false);
 
-// Sync phone across all front-counter and customer-care cards
+// Sync phone across front-counter cards
 function syncActivePhone(value: string) {
   visit.phone = value;
   redeem.phone = value;
-  lookup.phone = value;
-  profile.phone = value;
 }
 
 const businessOptions = computed<BusinessOption[]>(() => {
@@ -404,6 +329,10 @@ function openOwnerUsers() {
   router.push({ name: 'owner-users' });
 }
 
+function openCustomerCare() {
+  router.push({ name: 'customer-care' });
+}
+
 function openOwnerOperations() {
   if (!isOwner.value) {
     return;
@@ -426,7 +355,7 @@ function openOwnerReports() {
 }
 
 onMounted(() => {
-  const targets = ['front-counter', 'customer-care']
+  const targets = ['front-counter']
     .map((id) => document.getElementById(id))
     .filter(Boolean) as HTMLElement[];
 
@@ -488,79 +417,6 @@ async function redeemReward() {
   }
 }
 
-async function fetchCustomer() {
-  if (!activeBusiness.value) {
-    setMessage(lookupMessage, 'error', t('messages.selectBusiness'));
-    return;
-  }
-  lookupLoading.value = true;
-  try {
-    const data = await api.value.getCustomerStatus(activeBusiness.value.id, lookup.phone);
-    lookupResult.value = data;
-    profile.phone = lookup.phone;
-    setMessage(lookupMessage, 'success', t('messages.customerLoaded'));
-  } catch (error) {
-    setMessage(lookupMessage, 'error', getErrorMessage(error));
-  } finally {
-    lookupLoading.value = false;
-  }
-}
-
-async function fetchHistory() {
-  if (!activeBusiness.value) {
-    setMessage(lookupMessage, 'error', t('messages.selectBusiness'));
-    return;
-  }
-  historyLoading.value = true;
-  try {
-    const data = await api.value.getVisitHistory(activeBusiness.value.id, lookup.phone);
-    visitHistory.value = data || [];
-    setMessage(lookupMessage, 'success', t('messages.historyLoaded'));
-  } catch (error) {
-    setMessage(lookupMessage, 'error', getErrorMessage(error));
-  } finally {
-    historyLoading.value = false;
-  }
-}
-
-async function fetchStampHistory() {
-  if (!activeBusiness.value) {
-    setMessage(lookupMessage, 'error', t('messages.selectBusiness'));
-    return;
-  }
-  stampHistoryLoading.value = true;
-  try {
-    const data = await api.value.getStampHistory(activeBusiness.value.id, lookup.phone);
-    stampHistory.value = data || [];
-    setMessage(lookupMessage, 'success', t('messages.stampHistoryLoaded'));
-  } catch (error) {
-    setMessage(lookupMessage, 'error', getErrorMessage(error));
-  } finally {
-    stampHistoryLoading.value = false;
-  }
-}
-
-async function updateProfile() {
-  if (!activeBusiness.value) {
-    setMessage(profileMessage, 'error', t('messages.selectBusiness'));
-    return;
-  }
-  profileLoading.value = true;
-  try {
-    await api.value.updateCustomerProfile(activeBusiness.value.id, profile.phone, {
-      displayName: profile.displayName,
-      mobileNumber: profile.mobileNumber,
-      usualOrder: profile.usualOrder,
-      notes: profile.notes
-    });
-    setMessage(profileMessage, 'success', t('messages.profileUpdated'));
-  } catch (error) {
-    setMessage(profileMessage, 'error', getErrorMessage(error));
-  } finally {
-    profileLoading.value = false;
-  }
-}
-
 async function issueStamps() {
   if (!activeBusiness.value) {
     setMessage(stampIssueMessage, 'error', t('messages.selectBusiness'));
@@ -591,26 +447,6 @@ async function issueStamps() {
     setMessage(stampIssueMessage, 'error', getErrorMessage(error));
   } finally {
     stampIssueLoading.value = false;
-  }
-}
-
-async function createMembership() {
-  if (!activeBusiness.value) {
-    setMessage(membershipMessage, 'error', t('messages.selectBusiness'));
-    return;
-  }
-  if (!membership.phone.trim()) {
-    setMessage(membershipMessage, 'error', t('messages.customerPhoneRequired'));
-    return;
-  }
-  membershipLoading.value = true;
-  try {
-    await api.value.createMembership(activeBusiness.value.id, membership.phone);
-    setMessage(membershipMessage, 'success', t('messages.membershipCreated'));
-  } catch (error) {
-    setMessage(membershipMessage, 'error', getErrorMessage(error));
-  } finally {
-    membershipLoading.value = false;
   }
 }
 

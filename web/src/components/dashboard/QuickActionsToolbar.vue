@@ -7,7 +7,7 @@
       </div>
       <div class="flex flex-wrap gap-2">
         <button class="btn-ghost" @click="$emit('jump', 'front-counter')">{{ $t('dashboard.frontCounter') }}</button>
-        <button class="btn-ghost" @click="$emit('jump', 'customer-care')">{{ $t('dashboard.customerCare') }}</button>
+        <button class="btn-ghost" @click="$emit('open-customer-care')">{{ $t('dashboard.openCustomerCare') }}</button>
         <button v-if="isOwner" class="btn-ghost" @click="$emit('open-operations')">{{ $t('dashboard.openOperations') }}</button>
         <button v-if="isOwner" class="btn-ghost" @click="$emit('open-user-management')">{{ $t('dashboard.openUserManagement') }}</button>
         <button v-if="isOwner" class="btn-ghost" @click="$emit('open-settings')">{{ $t('dashboard.openSettings') }}</button>
@@ -24,6 +24,7 @@ defineProps<{
 
 defineEmits<{
   (e: 'jump', sectionId: string): void;
+  (e: 'open-customer-care'): void;
   (e: 'open-operations'): void;
   (e: 'open-user-management'): void;
   (e: 'open-settings'): void;

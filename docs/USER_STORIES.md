@@ -85,7 +85,8 @@ Acceptance criteria:
 3. User management has its own dedicated screen.
 4. Owner operations (redemptions + business totals) has its own dedicated screen.
 5. Front-counter actions are grouped on one focused staff screen.
-6. Reporting and configuration are separate from daily operations.
+6. Customer-care actions have their own dedicated staff/owner screen.
+7. Reporting and configuration are separate from daily operations.
 
 ## Screen Map (Target)
 
@@ -99,12 +100,13 @@ Acceptance criteria:
 8. `Owner Settings` screen
 9. `Owner Reports` screen
 10. `Staff Workspace` screen
-11. `Customer Mobile` flow
+11. `Staff Customer Care` screen
+12. `Customer Mobile` flow
 
 ## Navigation Rules (Target)
 
 1. Owner nav: Home, Operations, Staff Users, Settings, Reports.
-2. Staff nav: Workspace, Customer Lookup, Redemptions History.
+2. Staff nav: Workspace, Customer Care, Redemptions History.
 3. Platform admin nav remains separate from business operations.
 
 ## Backend Impact Summary (for implementation phase)

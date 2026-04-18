@@ -52,6 +52,7 @@ This file is the source-of-truth plan/status tracker for mobile/PWA work. Keep i
 - Web login now uses role-first auth: owner OTP and staff username/password.
 - Owner staff management now uses `/businesses/{businessId}/staff-users`; legacy owner `/staff` endpoints were removed.
 - Owner daily redemptions/stats operations now run from web owner route `/owner/operations`.
+- Customer lookup/profile/membership actions now run from web route `/customer-care`.
 - Owner loyalty setup and magic-link generation now run from web owner settings route `/owner/settings`.
 - Platform admin staff management on web now uses `/admin/businesses/{businessId}/staff-users` (credential staff users).
 - Dev OTP can be fixed via `Otp__FixedCode` (e.g. `000000`) for local testing.

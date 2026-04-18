@@ -179,6 +179,7 @@ const messages = {
       staffBusinesses: 'Staff businesses',
       refreshMe: 'Refresh /me',
       shortcuts: 'Shortcuts',
+      openCustomerCare: 'Open customer care',
       openOperations: 'Open operations',
       openUserManagement: 'Open user management',
       openSettings: 'Open settings',
@@ -243,6 +244,12 @@ const messages = {
       backToDashboard: 'Back to dashboard',
       ownerOnlyTitle: 'Owner access only',
       ownerOnlyHint: 'This operations screen is available only to business owners.'
+    },
+    customerCareView: {
+      title: 'Customer care',
+      description: 'Lookup customers, review history, update profiles, and enroll new members.',
+      sidebarHint: 'Use this dedicated screen for customer actions to keep counter operations focused.',
+      backToDashboard: 'Back to dashboard'
     },
     cards: {
       visitEntry: 'Visit entry',
@@ -688,6 +695,7 @@ const messages = {
       staffBusinesses: 'أنشطة الموظف',
       refreshMe: 'تحديث /me',
       shortcuts: 'اختصارات',
+      openCustomerCare: 'فتح خدمة العملاء',
       openOperations: 'فتح التشغيل',
       openUserManagement: 'فتح إدارة المستخدمين',
       openSettings: 'فتح الإعدادات',
@@ -752,6 +760,12 @@ const messages = {
       backToDashboard: 'العودة للوحة التشغيل',
       ownerOnlyTitle: 'للمالك فقط',
       ownerOnlyHint: 'شاشة التشغيل هذه متاحة فقط لمالكي الأنشطة.'
+    },
+    customerCareView: {
+      title: 'خدمة العملاء',
+      description: 'استعلم عن العملاء، راجع السجل، حدث الملفات الشخصية، وسجّل أعضاء جدد.',
+      sidebarHint: 'استخدم هذه الشاشة المخصصة لمهام العملاء حتى تبقى عمليات الكاشير مركزة.',
+      backToDashboard: 'العودة للوحة التشغيل'
     },
     cards: {
       visitEntry: 'تسجيل زيارة',

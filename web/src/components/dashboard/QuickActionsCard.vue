@@ -5,6 +5,9 @@
       <span class="chip">{{ $t('dashboard.shortcuts') }}</span>
     </div>
     <div class="mt-4 space-y-2">
+      <button class="btn-ghost w-full" @click="$emit('open-customer-care')">
+        {{ $t('dashboard.openCustomerCare') }}
+      </button>
       <button v-if="isOwner" class="btn-ghost w-full" @click="$emit('open-operations')">
         {{ $t('dashboard.openOperations') }}
       </button>
@@ -27,6 +30,7 @@ defineProps<{
 }>();
 
 defineEmits<{
+  (e: 'open-customer-care'): void;
   (e: 'open-operations'): void;
   (e: 'open-user-management'): void;
   (e: 'open-settings'): void;

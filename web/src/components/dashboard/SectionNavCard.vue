@@ -19,10 +19,9 @@
         </button>
         <button
           class="btn-ghost w-full"
-          :class="activeSection === 'customer-care' ? 'border-ember/40 text-ember' : ''"
-          @click="$emit('jump', 'customer-care')"
+          @click="$emit('open-customer-care')"
         >
-          {{ $t('dashboard.customerCare') }}
+          {{ $t('dashboard.openCustomerCare') }}
         </button>
         <button
           v-if="isOwner"
@@ -44,6 +43,7 @@ defineProps<{
 
 defineEmits<{
   (e: 'jump', sectionId: string): void;
+  (e: 'open-customer-care'): void;
   (e: 'open-operations'): void;
 }>();
 </script>

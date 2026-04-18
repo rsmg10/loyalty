@@ -54,6 +54,7 @@ This file is the source-of-truth plan/status tracker for web work. Keep it updat
 - [x] Simplify IA: dedicated owner settings screen (`/owner/settings`) for loyalty config + magic links
 - [x] Simplify IA: dedicated owner reports screen (`/owner/reports`) separate from daily counter dashboard
 - [x] Simplify IA: dedicated owner operations screen (`/owner/operations`) for redemptions + business stats
+- [x] Simplify IA: dedicated customer-care screen (`/customer-care`) for lookup/profile/membership
 
 ## Sellability TODOs
 
@@ -73,8 +74,7 @@ This file is the source-of-truth plan/status tracker for web work. Keep it updat
 - Business selector
 - Business setup
 - Visit entry
-- Customer lookup
-- Customer profile edit (optional mobile, usual order, notes)
+- Customer care workspace (lookup/profile/membership)
 - Redemption
 - Loyalty config (owner)
 - Owner user management (owner-only, dedicated screen)
@@ -95,6 +95,7 @@ This file is the source-of-truth plan/status tracker for web work. Keep it updat
 - Owner operations route is `/owner/operations` (owner-only).
 - Owner settings route is `/owner/settings` (owner-only).
 - Owner reports route is `/owner/reports` (owner-only).
+- Customer care route is `/customer-care` (staff/owner).
 - Configure `VITE_API_BASE_URL` to point at the backend (defaults to `http://localhost:5000`).
 - Auth is required for all API calls except OTP endpoints. Store the token from `/auth/verify-otp` and send `Authorization: Bearer <token>`.
 - The UI sends `Accept-Language: en|ar` (or `?lang=`) so backend error and SMS responses match the selected language.
@@ -106,7 +107,7 @@ This file is the source-of-truth plan/status tracker for web work. Keep it updat
 - Platform admin staff operations also use credential staff users (`/admin/businesses/{businessId}/staff-users`).
 - Dev OTP can be fixed via `Otp__FixedCode` (e.g. `000000`) for local testing.
 - CORS origins are controlled by `Cors__AllowedOrigins` (comma-separated), defaulting to localhost web/mobile ports. For LAN/mobile testing, add your IP (e.g. `http://192.168.1.10:5173`). You can also set `Cors__AllowAll=true` for local dev.
-- Owners can onboard businesses, manage staff, and run owner operations/settings/reports in dedicated routes. Staff can record visits, redeem rewards, and edit customer profiles.
+- Owners can onboard businesses, manage staff, and run owner operations/settings/reports in dedicated routes. Staff can run front-counter actions from dashboard and customer actions from `/customer-care`.
 - Login now includes a startup checklist (dev command, URLs, OTP behavior, and role flow expectations).
 - Dashboard now includes a flow guide card (owner -> staff -> customer -> platform admin path).
 - Visit cooldown is enforced server-side; the visit response always returns the current progress/reward status even when a visit is ignored.
@@ -125,8 +126,8 @@ This file is the source-of-truth plan/status tracker for web work. Keep it updat
 
 1. Owner OTP login → onboarding (business + loyalty config).
 2. Owner/admin creates staff user (`displayName`, `username`, `password`) in staff user management.
-3. Staff logs in with username/password → visit entry + redemption.
-4. Customer lookup → profile update (name, optional mobile, usual order, notes).
+3. Staff logs in with username/password → front-counter visit/redemption on dashboard.
+4. Staff/owner opens `/customer-care` → customer lookup, profile update (name, optional mobile, usual order, notes), and membership join.
 5. Owner staff management in `/owner/users` + owner operations in `/owner/operations` + owner settings in `/owner/settings` + owner reporting in `/owner/reports`.
 6. Staff/owner stamp issuance with quantity + reason.
 7. Owner redemptions/stats view in `/owner/operations` (enrolled customers, stamps issued, rewards redeemed).
