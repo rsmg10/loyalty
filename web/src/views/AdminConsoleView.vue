@@ -10,6 +10,23 @@
       <p class="mt-2 text-sm text-dusk/70">{{ $t('admin.consoleDescription') }}</p>
     </section>
 
+    <!-- Access denied state -->
+    <section v-if="accessDenied" class="glass-card animate-rise border-coral/30 bg-coral/5">
+      <div class="flex items-center gap-3">
+        <span class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-coral/15 text-coral">
+          <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path fill-rule="evenodd" d="M10 1a4.5 4.5 0 0 0-4.5 4.5V9H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-.5V5.5A4.5 4.5 0 0 0 10 1Zm3 8V5.5a3 3 0 1 0-6 0V9h6Z" clip-rule="evenodd" />
+          </svg>
+        </span>
+        <div>
+          <p class="font-semibold text-coral">{{ $t('admin.accessDeniedTitle') }}</p>
+          <p class="mt-0.5 text-sm text-dusk/70">{{ $t('admin.accessDeniedHint') }}</p>
+        </div>
+      </div>
+    </section>
+
+    <template v-if="!accessDenied">
+
     <AdminOverviewCard
       :report="overview"
       :loading="overviewLoading"
@@ -187,11 +204,12 @@
         </p>
       </div>
     </section>
+    </template>
   </main>
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, watch } from 'vue';
+import { onMounted, reactive, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useLoyaltyApi } from '../composables/useLoyaltyApi';
 import { useSessionStore } from '../stores/session';
@@ -216,6 +234,8 @@ const router = useRouter();
 const session = useSessionStore();
 const api = useLoyaltyApi(session.token);
 const { t } = useI18n();
+
+const accessDenied = ref(false);
 
 const overview = ref<PlatformOverviewReport | null>(null);
 const overviewLoading = ref(false);
@@ -289,6 +309,23 @@ watch(
     businessForm.stampExpirationDays = detail.stampExpirationDays ?? '';
   }
 );
+
+onMounted(async () => {
+  overviewLoading.value = true;
+  try {
+    overview.value = await api.getAdminOverview();
+    setMessage(overviewMessage, 'success', t('messages.adminOverviewLoaded'));
+  } catch (error) {
+    const msg = getErrorMessage(error);
+    if (msg.toLowerCase().includes('forbidden') || msg.toLowerCase().includes('unauthorized') || msg.toLowerCase().includes('403')) {
+      accessDenied.value = true;
+    } else {
+      setMessage(overviewMessage, 'error', msg);
+    }
+  } finally {
+    overviewLoading.value = false;
+  }
+});
 
 async function loadOverview(query?: { start?: string; end?: string }) {
   overviewLoading.value = true;

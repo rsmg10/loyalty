@@ -34,6 +34,7 @@ This file is the source-of-truth plan/status tracker for web work. Keep it updat
 - [x] Admin reporting console (platform overview + vendor comparison)
 - [x] Platform admin console (manage businesses + configs)
 - [x] Platform admin staff management (add/disable staff)
+- [x] Staff OTP guard (staff phone must exist as active staff before sign-in)
 - [x] Stamp issuance flow (quantity + reason) using `/stamps`
 - [x] Membership join action (explicit create via `/memberships`)
 - [x] Stamp transaction history view (audit)
@@ -80,6 +81,7 @@ This file is the source-of-truth plan/status tracker for web work. Keep it updat
 - Auth is required for all API calls except OTP endpoints. Store the token from `/auth/verify-otp` and send `Authorization: Bearer <token>`.
 - The UI sends `Accept-Language: en|ar` (or `?lang=`) so backend error and SMS responses match the selected language.
 - Use `purpose` values like `owner` and `staff` in OTP requests to tag sessions.
+- `purpose=staff` now requires the phone to already exist as an active staff record; owners or platform admins must create staff first.
 - Dev OTP can be fixed via `Otp__FixedCode` (e.g. `000000`) for local testing.
 - CORS origins are controlled by `Cors__AllowedOrigins` (comma-separated), defaulting to localhost web/mobile ports. For LAN/mobile testing, add your IP (e.g. `http://192.168.1.10:5173`). You can also set `Cors__AllowAll=true` for local dev.
 - Owners can onboard businesses, manage staff, and view redemptions. Staff can record visits, redeem rewards, and edit customer profiles.
@@ -100,16 +102,17 @@ This file is the source-of-truth plan/status tracker for web work. Keep it updat
 ## Required Flows
 
 1. Owner OTP login → onboarding (business + loyalty config).
-2. Staff OTP login → visit entry + redemption.
-3. Customer lookup → profile update (name, optional mobile, usual order, notes).
-4. Owner staff management + redemption list.
-5. Staff/owner stamp issuance with quantity + reason.
-6. Owner stats view (enrolled customers, stamps issued, rewards redeemed).
+2. Owner/admin adds staff phone in staff management.
+3. Staff OTP login (existing active staff only) → visit entry + redemption.
+4. Customer lookup → profile update (name, optional mobile, usual order, notes).
+5. Owner staff management + redemption list.
+6. Staff/owner stamp issuance with quantity + reason.
+7. Owner stats view (enrolled customers, stamps issued, rewards redeemed).
 
 ## API Checklist
 
-- POST `/auth/request-otp` { `phoneNumber`, `purpose` }
-- POST `/auth/verify-otp` { `phoneNumber`, `code`, `purpose` } → `token`
+- POST `/auth/request-otp` { `phoneNumber`, `purpose` } (`purpose=staff` requires an active staff record)
+- POST `/auth/verify-otp` { `phoneNumber`, `code`, `purpose` } → `token` (`purpose=staff` re-checks active staff)
 - GET `/health` (public health check)
 - GET `/me` (owner + staff businesses)
 - POST `/onboarding` (owner only, includes `programName`, `programDescription`, `rewardName`, `visitThreshold`, `optionalNote`, `stampExpirationDays`)

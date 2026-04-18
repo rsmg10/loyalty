@@ -45,6 +45,7 @@ This file is the source-of-truth plan/status tracker for mobile/PWA work. Keep i
 - Use OTP login to get a session token; send `Authorization: Bearer <token>` on all API requests.
 - The app sends `Accept-Language: en|ar` (or `?lang=`) so backend responses match the selected language.
 - Use `purpose` value `customer` in OTP requests.
+- Shared OTP endpoints now enforce that `purpose=staff` is pre-provisioned (active staff created by owner/admin on web); mobile remains customer-only.
 - Dev OTP can be fixed via `Otp__FixedCode` (e.g. `000000`) for local testing.
 - CORS origins are controlled by `Cors__AllowedOrigins` (comma-separated), defaulting to localhost web/mobile ports. For LAN/mobile testing, add your IP (e.g. `http://192.168.1.10:5174`). You can also set `Cors__AllowAll=true` for local dev.
 - The app is read-only: show loyalty status and visit history only.
@@ -65,8 +66,8 @@ This file is the source-of-truth plan/status tracker for mobile/PWA work. Keep i
 
 ## API Checklist
 
-- POST `/auth/request-otp` { `phoneNumber`, `purpose` }
-- POST `/auth/verify-otp` { `phoneNumber`, `code`, `purpose` } → `token`
+- POST `/auth/request-otp` { `phoneNumber`, `purpose` } (`purpose=staff` requires active staff; mobile uses `customer`)
+- POST `/auth/verify-otp` { `phoneNumber`, `code`, `purpose` } → `token` (`purpose=staff` re-checks active staff)
 - GET `/health` (public health check)
 - GET `/me` (optional; can be used to confirm the authenticated phone number)
 - GET `/businesses/{businessId}/customers/{phoneNumber}` (status)

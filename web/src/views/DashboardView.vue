@@ -43,36 +43,85 @@
           section-id="front-counter"
           :title="$t('dashboard.frontCounter')"
           :subtitle="$t('dashboard.frontCounterSubtitle')"
-          :default-open="true"
+          :default-open="!isOwner"
         >
+          <!-- Visit entry — primary daily action -->
           <VisitEntryCard
             :phone="visit.phone"
             :loading="visitLoading"
             :result="visitResult"
             :message="visitMessage"
-            @update:phone="(value) => (visit.phone = value)"
+            @update:phone="(value) => syncActivePhone(value)"
             @record="recordVisit"
           />
-          <StampIssueCard
-            :phone="stampIssue.phone"
-            :quantity="stampIssue.quantity"
-            :reason="stampIssue.reason"
-            :loading="stampIssueLoading"
-            :result="stampIssueResult"
-            :message="stampIssueMessage"
-            @update:phone="(value) => (stampIssue.phone = value)"
-            @update:quantity="(value) => (stampIssue.quantity = value)"
-            @update:reason="(value) => (stampIssue.reason = value)"
-            @issue="issueStamps"
-          />
+
+          <!-- Reward banner — promoted when earned -->
+          <div
+            v-if="visitResult?.rewardAvailable"
+            class="glass-card border-moss/30 bg-moss/10 animate-rise"
+          >
+            <div class="flex items-center justify-between">
+              <h2 class="section-title text-moss">🎉 {{ $t('dashboard.rewardEarned') }}</h2>
+              <span class="chip border-moss/30 text-moss">{{ $t('dashboard.rewardReady') }}</span>
+            </div>
+            <p class="mt-1 text-sm text-moss/80">{{ $t('dashboard.rewardEarnedHint') }}</p>
+          </div>
+
+          <!-- Redemption -->
           <RedemptionCard
             :phone="redeem.phone"
             :loading="redeemLoading"
             :result="redeemResult"
             :message="redeemMessage"
-            @update:phone="(value) => (redeem.phone = value)"
+            @update:phone="(value) => { redeem.phone = value }"
             @redeem="redeemReward"
           />
+
+          <!-- Manual stamp adjustment — secondary, behind disclosure -->
+          <div class="glass-card animate-rise border-dusk/10">
+            <button
+              class="flex w-full items-center justify-between text-left"
+              @click="showStampIssue = !showStampIssue"
+            >
+              <div>
+                <h2 class="section-title text-base text-dusk/70">{{ $t('cards.stampIssuance') }}</h2>
+                <p class="mt-0.5 text-xs text-dusk/50">{{ $t('dashboard.stampIssueHint') }}</p>
+              </div>
+              <span class="chip">{{ showStampIssue ? $t('nav.collapse') : $t('nav.expand') }}</span>
+            </button>
+            <div v-if="showStampIssue" class="mt-4 space-y-3">
+              <input
+                class="input"
+                :placeholder="$t('forms.customerPhone')"
+                :value="stampIssue.phone"
+                @input="stampIssue.phone = ($event.target as HTMLInputElement).value"
+              />
+              <input
+                class="input"
+                type="number"
+                min="1"
+                :placeholder="$t('forms.quantity')"
+                :value="stampIssue.quantity"
+                @input="stampIssue.quantity = Number(($event.target as HTMLInputElement).value)"
+              />
+              <input
+                class="input"
+                :placeholder="$t('forms.reason')"
+                :value="stampIssue.reason"
+                @input="stampIssue.reason = ($event.target as HTMLInputElement).value"
+              />
+              <button class="btn-ghost w-full" :disabled="stampIssueLoading" @click="issueStamps">
+                {{ stampIssueLoading ? $t('cards.issuing') : $t('cards.issueStamps') }}
+              </button>
+              <div v-if="stampIssueResult" class="rounded-xl bg-sand/70 p-3 text-sm">
+                <p class="font-semibold">
+                  {{ stampIssueResult.rewardAvailable ? $t('cards.rewardAvailable') : $t('messages.stampsIssued') }}
+                </p>
+                <p class="text-dusk/70">{{ stampIssueResult.stampCount }} / {{ stampIssueResult.stampThreshold }} {{ $t('cards.stamps') }}</p>
+              </div>
+              <p v-if="stampIssueMessage" :class="messageClass(stampIssueMessage.tone)">{{ stampIssueMessage.text }}</p>
+            </div>
+          </div>
         </SectionGroup>
 
         <SectionGroup
@@ -90,7 +139,7 @@
             :history-loading="historyLoading"
             :stamp-history="stampHistory"
             :stamp-history-loading="stampHistoryLoading"
-            @update:phone="(value) => (lookup.phone = value)"
+            @update:phone="(value) => { lookup.phone = value; profile.phone = value }"
             @fetch="fetchCustomer"
             @fetch-history="fetchHistory"
             @fetch-stamps="fetchStampHistory"
@@ -279,7 +328,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { getErrorMessage } from '../lib/errors';
-import { setMessage } from '../lib/messages';
+import { messageClass, setMessage } from '../lib/messages';
 import type { Message } from '../lib/messages';
 import { useLoyaltyApi } from '../composables/useLoyaltyApi';
 import { useI18n } from 'vue-i18n';
@@ -313,7 +362,6 @@ import QuickActionsToolbar from '../components/dashboard/QuickActionsToolbar.vue
 import FlowGuideCard from '../components/dashboard/FlowGuideCard.vue';
 import SectionNavCard from '../components/dashboard/SectionNavCard.vue';
 import VisitEntryCard from '../components/dashboard/VisitEntryCard.vue';
-import StampIssueCard from '../components/dashboard/StampIssueCard.vue';
 import RedemptionCard from '../components/dashboard/RedemptionCard.vue';
 import CustomerLookupCard from '../components/dashboard/CustomerLookupCard.vue';
 import CustomerProfileCard from '../components/dashboard/CustomerProfileCard.vue';
@@ -472,6 +520,15 @@ const magicLinkMessage = ref<Message | null>(null);
 
 const activeSection = ref('front-counter');
 const quickActionsOpen = ref(false);
+const showStampIssue = ref(false);
+
+// Sync phone across all front-counter and customer-care cards
+function syncActivePhone(value: string) {
+  visit.phone = value;
+  redeem.phone = value;
+  lookup.phone = value;
+  profile.phone = value;
+}
 
 const businessOptions = computed<BusinessOption[]>(() => {
   const map = new Map();
@@ -593,6 +650,10 @@ async function recordVisit() {
   try {
     const data = await api.value.recordVisit(activeBusiness.value.id, visit.phone);
     visitResult.value = data;
+    // Propagate phone to redemption card so staff can redeem in one step
+    if (data.rewardAvailable) {
+      redeem.phone = visit.phone;
+    }
     setMessage(visitMessage, 'success', t('messages.visitProcessed'));
   } catch (error) {
     setMessage(visitMessage, 'error', getErrorMessage(error));

@@ -79,6 +79,10 @@ body::before {
     @apply font-display text-xl font-semibold tracking-tight;
   }
 
+  .field-label {
+    @apply mb-1 block text-xs font-semibold uppercase tracking-wide text-ink/50;
+  }
+
   .stagger > .stagger-item {
     animation: rise 0.55s ease-out both;
   }

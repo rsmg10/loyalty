@@ -24,6 +24,7 @@ public sealed class LocalizationService
         ["Phone number and purpose are required"] = "رقم الهاتف والغرض مطلوبان",
         ["Phone number, purpose, and code are required"] = "رقم الهاتف والغرض والرمز مطلوبة",
         ["Invalid or expired code"] = "الرمز غير صالح أو منتهي",
+        ["Staff account not found. Ask the owner or platform admin to add your phone first"] = "حساب الموظف غير موجود. اطلب من المالك أو مدير المنصة إضافة رقمك أولاً",
         ["Display name and phone number are required"] = "الاسم ورقم الهاتف مطلوبان",
         ["Object storage is not configured."] = "تخزين الملفات غير مُعدّ",
         ["Magic link not found or expired"] = "رابط الدخول غير صالح أو منتهي",

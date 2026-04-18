@@ -1380,6 +1380,7 @@ app.MapPost("/auth/request-otp", async (
     AuthRequestOtp request,
     HttpRequest httpRequest,
     OtpService otpService,
+    AppDbContext db,
     LocalizationService localizer) =>
 {
     if (string.IsNullOrWhiteSpace(request.PhoneNumber) || string.IsNullOrWhiteSpace(request.Purpose))
@@ -1388,7 +1389,13 @@ app.MapPost("/auth/request-otp", async (
     }
 
     var normalizedPhone = request.PhoneNumber.Trim();
-    var purpose = request.Purpose.Trim();
+    var purpose = request.Purpose.Trim().ToLowerInvariant();
+    if (string.Equals(purpose, "staff", StringComparison.Ordinal)
+        && !await HasActiveStaffLoginAsync(db, normalizedPhone))
+    {
+        return BadRequest(httpRequest, localizer, "Staff account not found. Ask the owner or platform admin to add your phone first");
+    }
+
     var language = GetRequestLanguage(httpRequest, localizer);
 
     await otpService.RequestOtpAsync(normalizedPhone, purpose, language);
@@ -1400,6 +1407,7 @@ app.MapPost("/auth/verify-otp", async (
     AuthVerifyOtp request,
     HttpRequest httpRequest,
     OtpService otpService,
+    AppDbContext db,
     LocalizationService localizer) =>
 {
     if (string.IsNullOrWhiteSpace(request.PhoneNumber)
@@ -1410,8 +1418,14 @@ app.MapPost("/auth/verify-otp", async (
     }
 
     var normalizedPhone = request.PhoneNumber.Trim();
-    var purpose = request.Purpose.Trim();
+    var purpose = request.Purpose.Trim().ToLowerInvariant();
     var code = request.Code.Trim();
+
+    if (string.Equals(purpose, "staff", StringComparison.Ordinal)
+        && !await HasActiveStaffLoginAsync(db, normalizedPhone))
+    {
+        return BadRequest(httpRequest, localizer, "Staff account not found. Ask the owner or platform admin to add your phone first");
+    }
 
     var session = await otpService.VerifyOtpAsync(normalizedPhone, code, purpose);
     if (session is null)
@@ -1637,6 +1651,13 @@ static async Task<int?> GetStaffIdForSessionAsync(AppDbContext db, Business busi
         .Where(s => s.BusinessId == business.Id && s.PhoneNumber == phoneNumber && s.Active)
         .Select(s => (int?)s.Id)
         .FirstOrDefaultAsync();
+}
+
+static async Task<bool> HasActiveStaffLoginAsync(AppDbContext db, string phoneNumber)
+{
+    return await db.Staff.AnyAsync(s =>
+        s.PhoneNumber == phoneNumber
+        && s.Active);
 }
 
 static void SetCycleSnapshot(LoyaltyCycle cycle, LoyaltyConfig config)
